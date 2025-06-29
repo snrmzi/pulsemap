@@ -19,7 +19,7 @@ PulseMap is a real-time web app I built that gives live updates on natural disas
 - **Frontend**: Vanilla HTML/CSS/JavaScript
 - **Maps**: Leaflet.js
 - **Auth**: bcryptjs + express-session
-- **APIs**: USGS Earthquake API (planning to add more)
+- **APIs**: USGS Earthquake API + NOAA Tsunami API (planning to add more)
 - **Deployment**: Set up for Fly.io
 
 ## Getting it running
