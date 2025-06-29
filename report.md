@@ -429,6 +429,49 @@ Created SQLite tables:
 
 ---
 
+### 2025-12-29 - Data Refresh Strategy & Cleanup Policy Changes
+
+**Time**: Data management optimization and user control enhancement
+**Developer**: San
+
+#### ✅ Manual Data Refresh Implementation
+- **Server Startup Only**: Data fetching now occurs only when server starts
+- **Admin Control**: Manual refresh button in admin dashboard for on-demand updates
+- **No Automatic Updates**: Removed 10-minute automatic data fetching cron job
+- **User-Controlled**: Administrators have full control over when data is refreshed
+- **Performance Benefit**: Eliminates constant API calls and reduces server load
+
+#### ✅ Cleanup Policy Simplification
+- **24-Hour Cleanup**: Admin cleanup button now removes all data older than 24 hours
+- **Unified Policy**: Single, simple retention policy for all event types
+- **Manual Control**: No automatic cleanup - only when admin triggers it
+- **Data Freshness**: Ensures displayed data is always recent and relevant
+- **Simplified Logic**: Removed complex retention policies for different event types
+
+#### ✅ Wildfire Processing Optimization
+- **Memory Efficiency**: Improved CSV parsing to handle large datasets without filtering restrictions
+- **Quality Sorting**: Always selects top 100 wildfires by confidence and brightness
+- **No Date Restrictions**: Removes arbitrary date filtering to ensure 100 events are always retrieved
+- **Performance Boost**: Optimized processing to reduce memory usage and improve response times
+- **Guaranteed Results**: System now consistently provides 100 wildfire events regardless of API data quality
+
+#### ✅ Technical Benefits
+- **Reduced Server Load**: No constant background API calls
+- **Predictable Performance**: Data refresh only when needed
+- **Admin Empowerment**: Full control over data freshness and cleanup
+- **Simplified Architecture**: Removed complex cron scheduling and retention logic
+- **Better Resource Management**: More efficient use of server resources and API quotas
+
+---
+
+**Status**: ✅ Manual data control system implemented
+**Data Strategy**: On-demand refresh with 24-hour cleanup policy
+**Performance**: Optimized wildfire processing and reduced server overhead
+**User Control**: Full admin control over data refresh and cleanup operations
+**Architecture**: Simplified data management with improved efficiency
+
+---
+
 ## 🚀 Next Development Phase - Additional Disaster Types & Features
 
 ### **Planned Implementations:**

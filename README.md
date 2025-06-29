@@ -5,21 +5,22 @@ PulseMap is a real-time web application that provides live updates on natural di
 ## Features
 
 - **Interactive World Map**: Dark-themed world map with color-coded markers for different disaster types
-- **Real-time Updates**: Fetches fresh data every 10 minutes from multiple public APIs
+- **Manual Data Refresh**: Admin-controlled data updates on server startup and via refresh button
 - **Event Filtering**: Filter events by type using the dropdown menu
 - **Detailed Information**: Click on map markers or sidebar events to view comprehensive details
-- **Admin Dashboard**: Secure admin panel for managing events and data cleanup
+- **Admin Dashboard**: Secure admin panel for managing events and manual data refresh/cleanup
 - **Responsive Design**: Optimized for both desktop and mobile devices
-- **Intelligent Data Management**: Count-based limits for earthquakes (50) and volcanoes (50), 30-day retention for wildfires, 15-year retention for tsunamis
+- **Intelligent Data Management**: Count-based limits for earthquakes (50) and volcanoes (50), top 100 wildfires by quality
 - **Clean Architecture**: Separated HTML, CSS, and JavaScript for maintainability
 - **Interactive Navigation**: Click sidebar events to center and zoom map to event location
+- **24-Hour Data Cleanup**: Manual cleanup removes all data older than 24 hours
 
 ## Current Data Sources
 
 - **🌍 Earthquakes**: USGS Earthquake API (magnitude > 2.0, latest 50 events)
 - **🌊 Tsunamis**: NOAA Tsunami Warning API (active alerts + 1 demo event)
 - **🌋 Volcanoes**: Smithsonian Global Volcanism Program (2010-present, latest 50 events)
-- **🔥 Wildfires**: NASA FIRMS API (100 most recent fires, confidence 50%+, last 24h)
+- **🔥 Wildfires**: NASA FIRMS API (top 100 highest quality fires by confidence and brightness)
 
 ## Planned Features
 

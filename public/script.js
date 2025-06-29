@@ -77,8 +77,8 @@ function initMainPage() {
     loadEvents();
     setupEventFilter();
     
-    // Auto-refresh events every 5 minutes
-    setInterval(loadEvents, 300000);
+    // Note: Auto-refresh removed - data is now only updated on server startup 
+    // and manual refresh from admin dashboard
 }
 
 function initMap() {
@@ -860,7 +860,7 @@ async function logout() {
 }
 
 async function cleanupOldData() {
-    if (!confirm('Are you sure you want to clean up old data? This will remove events according to retention policies.')) {
+    if (!confirm('Are you sure you want to clean up old data? This will remove ALL events older than 24 hours.')) {
         return;
     }
     
@@ -880,6 +880,51 @@ async function cleanupOldData() {
     } catch (error) {
         console.error('Error during cleanup:', error);
         showAdminError('Failed to cleanup old data');
+    }
+}
+
+async function refreshAllData() {
+    if (!confirm('Are you sure you want to refresh all disaster data? This will fetch the latest data from all APIs.')) {
+        return;
+    }
+    
+    const refreshBtn = document.querySelector('button[onclick="refreshAllData()"]');
+    const originalText = refreshBtn ? refreshBtn.textContent : '';
+    
+    try {
+        // Show loading state
+        if (refreshBtn) {
+            refreshBtn.textContent = 'Refreshing...';
+            refreshBtn.disabled = true;
+        }
+        
+        showAdminMessage('Refreshing all disaster data...', 'info');
+        
+        const response = await fetch('/admin/refresh', {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showAdminMessage('All disaster data refreshed successfully!', 'success');
+            // Reload the events list to show updated data
+            setTimeout(() => {
+                loadAdminEvents();
+            }, 1000);
+        } else {
+            const error = await response.json();
+            showAdminError(`Failed to refresh data: ${error.details || error.error}`);
+        }
+    } catch (error) {
+        console.error('Error during data refresh:', error);
+        showAdminError('Failed to refresh data: Network error');
+    } finally {
+        // Restore button state
+        if (refreshBtn) {
+            refreshBtn.textContent = originalText;
+            refreshBtn.disabled = false;
+        }
     }
 }
 

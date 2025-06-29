@@ -134,9 +134,9 @@ router.delete('/events/:id', requireAuth, (req, res) => {
 // Clean old data manually
 router.post('/cleanup', requireAuth, (req, res) => {
   const db = req.app.locals.db;
-  const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+  const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
   
-  db.run('DELETE FROM events WHERE time < ?', [sevenDaysAgo], function(err) {
+  db.run('DELETE FROM events WHERE time < ?', [twentyFourHoursAgo], function(err) {
     if (err) {
       console.error('Database error:', err);
       return res.status(500).json({ error: 'Database error' });
@@ -144,10 +144,34 @@ router.post('/cleanup', requireAuth, (req, res) => {
     
     res.json({ 
       success: true, 
-      message: `Cleaned up ${this.changes} old events`,
+      message: `Cleaned up ${this.changes} events older than 24 hours`,
       deletedCount: this.changes 
     });
   });
+});
+
+// Refresh all disaster data manually
+router.post('/refresh', requireAuth, async (req, res) => {
+  try {
+    const refreshAllData = req.app.locals.refreshAllData;
+    if (!refreshAllData) {
+      return res.status(500).json({ error: 'Refresh function not available' });
+    }
+    
+    console.log('Manual data refresh triggered by admin');
+    await refreshAllData();
+    
+    res.json({ 
+      success: true, 
+      message: 'All disaster data refreshed successfully' 
+    });
+  } catch (error) {
+    console.error('Error refreshing data:', error);
+    res.status(500).json({ 
+      error: 'Failed to refresh data', 
+      details: error.message 
+    });
+  }
 });
 
 module.exports = router;

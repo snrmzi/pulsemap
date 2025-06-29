@@ -433,6 +433,15 @@ main {
     background-color: #4b5563;
 }
 
+.btn-success {
+    background-color: #16a34a;
+    color: white;
+}
+
+.btn-success:hover {
+    background-color: #15803d;
+}
+
 .btn-danger {
     background-color: #dc2626;
     color: white;

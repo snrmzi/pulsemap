@@ -281,20 +281,25 @@ const fetchVolcanoData = async () => {
 // Fetch wildfire data from NASA FIRMS
 const fetchWildfireData = async () => {
   try {
-    // Try the CSV endpoint instead and convert to JSON locally
     // NASA FIRMS provides global active fire data - last 24 hours
     let response;
     let fires = [];
     
     try {
-      // Try CSV endpoint first
-      response = await axios.get('https://firms.modaps.eosdis.nasa.gov/data/active_fire/suomi-npp-viirs-c2/csv/SUOMI_VIIRS_C2_Global_24h.csv');
+      // Fetch CSV data with streaming for better memory management
+      response = await axios.get('https://firms.modaps.eosdis.nasa.gov/data/active_fire/suomi-npp-viirs-c2/csv/SUOMI_VIIRS_C2_Global_24h.csv', {
+        responseType: 'text',
+        timeout: 30000 // 30 second timeout
+      });
       
       if (response.data && response.data.trim().length > 0) {
-        // Parse CSV data
+        // Parse CSV data efficiently - get ALL fires first, then sort and limit
         const lines = response.data.trim().split('\n');
         const headers = lines[0].split(',');
         
+        console.log(`Processing ${lines.length - 1} total fire records from NASA FIRMS...`);
+        
+        // Process all lines to get complete dataset
         for (let i = 1; i < lines.length; i++) {
           const values = lines[i].split(',');
           if (values.length >= headers.length) {
@@ -303,23 +308,26 @@ const fetchWildfireData = async () => {
               fire[header.toLowerCase().trim()] = values[index] ? values[index].trim() : '';
             });
             
-            // Map CSV fields to our expected format
+            // Only require basic coordinate data - no filtering by confidence or date
             if (fire.latitude && fire.longitude && fire.bright_ti4) {
               fires.push({
                 latitude: parseFloat(fire.latitude),
                 longitude: parseFloat(fire.longitude),
                 brightness: parseFloat(fire.bright_ti4) || 300,
-                confidence: parseFloat(fire.confidence) || 50,
-                acq_date: fire.acq_date,
-                acq_time: fire.acq_time
+                confidence: parseFloat(fire.confidence) || 0,
+                acq_date: fire.acq_date || '',
+                acq_time: fire.acq_time || '0000'
               });
             }
           }
         }
+        
+        console.log(`Found ${fires.length} total fires with valid coordinates`);
       }
     } catch (csvError) {
       console.log('CSV endpoint failed:', csvError.message);
       console.log('No wildfire data available - API endpoint not accessible');
+      return;
     }
     
     if (fires.length === 0) {
@@ -327,82 +335,73 @@ const fetchWildfireData = async () => {
       return;
     }
 
-    // Debug: check what dates we have
-    const uniqueDates = [...new Set(fires.map(f => f.acq_date))].sort().reverse();
-    console.log(`Available fire data dates: ${uniqueDates.slice(0, 5).join(', ')} (showing first 5)`);
-
-    // Filter and limit fires efficiently
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    const yesterdayStr = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    
-    // Sort fires by confidence and date (best quality first), then filter
+    // Sort by quality (confidence and brightness) and take top 100
     const sortedFires = fires
-      .filter(fire => {
-        // More lenient filter: recent dates and reasonable confidence
-        return (fire.acq_date === todayStr || fire.acq_date === yesterdayStr) && 
-               fire.confidence >= 50; // Lower confidence threshold
-      })
       .sort((a, b) => {
-        // Sort by confidence first (higher is better), then by date/time
-        const confidenceDiff = (b.confidence || 0) - (a.confidence || 0);
+        // Sort by confidence first (higher is better)
+        const confidenceDiff = b.confidence - a.confidence;
         if (confidenceDiff !== 0) return confidenceDiff;
         
-        // Then sort by date (newest first)
+        // Then sort by brightness (higher is better)
+        const brightnessDiff = b.brightness - a.brightness;
+        if (brightnessDiff !== 0) return brightnessDiff;
+        
+        // Finally sort by date (newest first)
         if (a.acq_date !== b.acq_date) {
           return b.acq_date.localeCompare(a.acq_date);
         }
-        return (b.acq_time || '0000').localeCompare(a.acq_time || '0000');
+        return b.acq_time.localeCompare(a.acq_time);
       })
-      .slice(0, 100); // Take only the 100 most recent and reliable
+      .slice(0, 100); // Always take exactly 100 fires
     
-    console.log(`Selected ${sortedFires.length} most recent fires from ${fires.length} total (confidence 50%+, last 24h)`);
+    console.log(`Selected top ${sortedFires.length} highest quality fires for display`);
     
     let processedCount = 0;
     
-    // Clean up old wildfire data (30 days)
-    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-    db.run('DELETE FROM events WHERE type = "wildfire" AND time < ?', [thirtyDaysAgo]);
-    
-    for (const fire of sortedFires) {
-      // Skip fires with very low confidence (redundant check, but keeping for safety)
-      if (fire.confidence < 50) continue;
+    // Clear existing wildfire data and insert new limited set
+    db.run('DELETE FROM events WHERE type = "wildfire"', (err) => {
+      if (err) {
+        console.error('Error clearing wildfire data:', err);
+        return;
+      }
       
-      // Generate unique event ID based on coordinates and date
-      const eventId = `wildfire_${fire.latitude}_${fire.longitude}_${fire.acq_date}`;
-      
-      // Calculate intensity based on brightness and confidence
-      // Brightness ranges typically 300-400K, confidence 0-100
-      const normalizedBrightness = Math.min(Math.max((fire.brightness - 300) / 100, 0), 1);
-      const normalizedConfidence = fire.confidence / 100;
-      const intensity = Math.round((normalizedBrightness * 0.7 + normalizedConfidence * 0.3) * 10) / 10;
-      
-      // Create timestamp from acquisition date and time
-      const dateTime = `${fire.acq_date} ${fire.acq_time}`;
-      const timestamp = new Date(dateTime.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2})(\d{2})/, '$1-$2-$3T$4:$5:00Z')).getTime();
-      
-      // Create title and description
-      const title = `Active Fire Detection`;
-      const description = `Fire detected by satellite with ${fire.confidence}% confidence. Brightness: ${fire.brightness}K`;
-      
-      db.run(`INSERT OR REPLACE INTO events 
-        (event_id, type, title, description, magnitude, latitude, longitude, location, time, url)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          eventId,
-          'wildfire',
-          title,
-          description,
-          intensity, // Use magnitude field for fire intensity
-          fire.latitude,
-          fire.longitude,
-          `${fire.latitude.toFixed(3)}, ${fire.longitude.toFixed(3)}`,
-          timestamp,
-          'https://firms.modaps.eosdis.nasa.gov/'
-        ]);
-      
-      processedCount++;
-    }
+      for (const fire of sortedFires) {
+        // Generate unique event ID based on coordinates and date
+        const eventId = `wildfire_${fire.latitude}_${fire.longitude}_${fire.acq_date}`;
+        
+        // Calculate intensity based on brightness and confidence
+        // Brightness ranges typically 300-400K, confidence 0-100
+        const normalizedBrightness = Math.min(Math.max((fire.brightness - 300) / 100, 0), 1);
+        const normalizedConfidence = Math.max(fire.confidence / 100, 0.1); // Minimum 10% for calculation
+        const intensity = Math.round((normalizedBrightness * 0.7 + normalizedConfidence * 0.3) * 10) / 10;
+        
+        // Create timestamp from acquisition date and time
+        const dateTime = `${fire.acq_date} ${fire.acq_time}`;
+        const timestamp = new Date(dateTime.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2})(\d{2})/, '$1-$2-$3T$4:$5:00Z')).getTime();
+        
+        // Create title and description
+        const title = `Active Fire Detection`;
+        const description = `Fire detected by satellite with ${fire.confidence}% confidence. Brightness: ${fire.brightness}K`;
+        
+        db.run(`INSERT OR REPLACE INTO events 
+          (event_id, type, title, description, magnitude, latitude, longitude, location, time, url)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            eventId,
+            'wildfire',
+            title,
+            description,
+            intensity, // Use magnitude field for fire intensity
+            fire.latitude,
+            fire.longitude,
+            `${fire.latitude.toFixed(3)}, ${fire.longitude.toFixed(3)}`,
+            timestamp,
+            'https://firms.modaps.eosdis.nasa.gov/'
+          ]);
+        
+        processedCount++;
+      }
+    });
     
     console.log(`Updated ${processedCount} wildfire events from NASA FIRMS`);
     
@@ -411,50 +410,32 @@ const fetchWildfireData = async () => {
   }
 };
 
-// Schedule data fetching every 10 minutes
-cron.schedule('*/10 * * * *', () => {
-  console.log('Fetching latest disaster data...');
-  fetchEarthquakeData();
-  fetchTsunamiData();
-  fetchVolcanoData();
-  fetchWildfireData();
-});
+// Create a function to refresh all disaster data
+const refreshAllData = async () => {
+  console.log('Refreshing all disaster data...');
+  try {
+    await Promise.all([
+      fetchEarthquakeData(),
+      fetchTsunamiData(),
+      fetchVolcanoData(),
+      fetchWildfireData()
+    ]);
+    console.log('All disaster data refreshed successfully');
+  } catch (error) {
+    console.error('Error refreshing disaster data:', error);
+  }
+};
 
-// Get initial data on startup
-fetchEarthquakeData();
-fetchTsunamiData();
-fetchVolcanoData();
-fetchWildfireData();
+// Get initial data on startup only
+console.log('Server starting - fetching initial disaster data...');
+refreshAllData();
 
-// Clean up old data every day at midnight with different retention policies
-cron.schedule('0 0 * * *', () => {
-  const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
-  const fifteenYearsAgo = Date.now() - (15 * 365 * 24 * 60 * 60 * 1000);
-  
-  // Note: Earthquakes and volcanoes are now limited to 50 latest events each during fetch
-  // So no time-based cleanup needed for them
-  
-  // Clean up wildfires older than 30 days
-  db.run('DELETE FROM events WHERE type = "wildfire" AND time < ?', [thirtyDaysAgo], function(err) {
-    if (err) {
-      console.error('Error cleaning old wildfire data:', err);
-    } else {
-      console.log(`Cleaned up ${this.changes} old wildfire events`);
-    }
-  });
-  
-  // Clean up tsunamis older than 15 years
-  db.run('DELETE FROM events WHERE type = "tsunami" AND time < ?', [fifteenYearsAgo], function(err) {
-    if (err) {
-      console.error('Error cleaning old tsunami data:', err);
-    } else {
-      console.log(`Cleaned up ${this.changes} old tsunami events`);
-    }
-  });
-});
+// Note: Automatic cleanup removed - now only manual cleanup via admin dashboard
+// All cleanup operations are available through the admin interface
 
-// Make db available to routes
+// Make functions and db available to routes
 app.locals.db = db;
+app.locals.refreshAllData = refreshAllData;
 
 app.listen(PORT, () => {
   console.log(`PulseMap server running on port ${PORT}`);

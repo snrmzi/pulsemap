@@ -11,7 +11,8 @@
         <h1>PulseMap Admin Dashboard</h1>
         <div class="header-actions">
             <button class="btn btn-secondary" onclick="window.open('/', '_blank')">View Site</button>
-            <button class="btn btn-primary" onclick="cleanupOldData()">Cleanup Old Data</button>
+            <button class="btn btn-success" onclick="refreshAllData()">Refresh Data</button>
+            <button class="btn btn-primary" onclick="cleanupOldData()">Cleanup 24h+ Data</button>
             <button class="btn btn-danger" onclick="logout()">Logout</button>
         </div>
     </div>
@@ -29,7 +30,7 @@
         <div class="events-section">
             <div class="section-header">
                 <h2>All Events</h2>
-                <button class="btn btn-primary" onclick="loadAdminEvents()">Refresh</button>
+                <button class="btn btn-secondary" onclick="loadAdminEvents()">Reload List</button>
             </div>
             
             <div id="eventsContainer">
