@@ -412,7 +412,6 @@ function updateStats() {
         volcano: 0,
         wildfire: 0,
         flood: 0,
-        solar_flare: 0,
         total: 0
     };
     
@@ -473,15 +472,6 @@ function updateStats() {
             <div class="stat-item">
                 <span class="stat-number">${eventCounts.flood}</span>
                 <span class="stat-label">Floods</span>
-            </div>
-        `;
-    }
-    
-    if (eventCounts.solar_flare > 0) {
-        statsHTML += `
-            <div class="stat-item">
-                <span class="stat-number">${eventCounts.solar_flare}</span>
-                <span class="stat-label">Solar Flares</span>
             </div>
         `;
     }
@@ -754,7 +744,7 @@ function updateAdminStats() {
     // Update stats grid with breakdown
     const statsGrid = document.getElementById('statsGrid');
     if (statsGrid && currentEvents.length > 0) {
-        const eventTypes = ['earthquake', 'tsunami', 'volcano', 'wildfire', 'flood', 'solar_flare'];
+        const eventTypes = ['earthquake', 'tsunami', 'volcano', 'wildfire', 'flood'];
         const stats = {};
         
         // Count events by type
@@ -787,10 +777,6 @@ function updateAdminStats() {
             <div class="stat-card">
                 <span class="stat-number">${stats.flood}</span>
                 <div class="stat-label">Floods</div>
-            </div>
-            <div class="stat-card">
-                <span class="stat-number">${stats.solar_flare}</span>
-                <div class="stat-label">Solar Flares</div>
             </div>
         `;
         
@@ -1022,6 +1008,172 @@ function showAdminMessage(message, type = 'info') {
 function showAdminError(message) {
     showAdminMessage(message, 'error');
 }
+
+// ===== ACCOUNT SETTINGS FUNCTIONS =====
+
+// Get current user info from session
+let currentUser = null;
+
+async function loadCurrentUser() {
+    try {
+        const response = await fetch('/admin/user-info', {
+            credentials: 'include'
+        });
+        
+        if (response.ok) {
+            currentUser = await response.json();
+            const usernameField = document.getElementById('currentUsername');
+            if (usernameField && currentUser) {
+                usernameField.value = currentUser.username;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading user info:', error);
+    }
+}
+
+function openAccountSettings() {
+    const modal = document.getElementById('accountModal');
+    if (modal) {
+        // Load current user info
+        loadCurrentUser();
+        
+        // Clear forms
+        document.getElementById('usernameForm').reset();
+        document.getElementById('passwordForm').reset();
+        
+        // Clear any previous messages
+        const messageEl = document.getElementById('accountMessage');
+        if (messageEl) {
+            messageEl.style.display = 'none';
+        }
+        
+        modal.style.display = 'block';
+    }
+}
+
+function closeAccountModal() {
+    const modal = document.getElementById('accountModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function showAccountMessage(message, type = 'success') {
+    const messageEl = document.getElementById('accountMessage');
+    if (messageEl) {
+        messageEl.className = `modal-message ${type}`;
+        messageEl.textContent = message;
+        messageEl.style.display = 'block';
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            messageEl.style.display = 'none';
+        }, 5000);
+    }
+}
+
+// Handle username change form
+document.addEventListener('DOMContentLoaded', function() {
+    const usernameForm = document.getElementById('usernameForm');
+    if (usernameForm) {
+        usernameForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const newUsername = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('usernamePassword').value;
+            
+            // Client-side validation
+            if (newUsername.length < 2 || newUsername.length > 20) {
+                showAccountMessage('Username must be between 2 and 20 characters', 'error');
+                return;
+            }
+            
+            if (!currentUser || newUsername === currentUser.username) {
+                showAccountMessage('Please enter a different username', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/change-username', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ newUsername, currentPassword: password })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAccountMessage('Username updated successfully!', 'success');
+                    currentUser.username = newUsername;
+                    document.getElementById('currentUsername').value = newUsername;
+                    usernameForm.reset();
+                } else {
+                    showAccountMessage(result.error || 'Failed to update username', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating username:', error);
+                showAccountMessage('Network error occurred', 'error');
+            }
+        });
+    }
+    
+    const passwordForm = document.getElementById('passwordForm');
+    if (passwordForm) {
+        passwordForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Client-side validation
+            if (newPassword !== confirmPassword) {
+                showAccountMessage('New passwords do not match', 'error');
+                return;
+            }
+            
+            if (newPassword === currentPassword) {
+                showAccountMessage('New password must be different from current password', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/admin/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ currentPassword, newPassword })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAccountMessage('Password updated successfully!', 'success');
+                    passwordForm.reset();
+                } else {
+                    showAccountMessage(result.error || 'Failed to update password', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating password:', error);
+                showAccountMessage('Network error occurred', 'error');
+            }
+        });
+    }
+});
+
+// Close account modal when clicking outside
+window.addEventListener('click', function(event) {
+    const accountModal = document.getElementById('accountModal');
+    if (event.target === accountModal) {
+        closeAccountModal();
+    }
+});
 
 // ===== SHARED UTILITY FUNCTIONS =====
 

@@ -13,6 +13,7 @@
             <button class="btn btn-secondary" onclick="window.open('/', '_blank')">View Site</button>
             <button class="btn btn-success" onclick="refreshAllData()">Refresh Data</button>
             <button class="btn btn-primary" onclick="cleanupOldData()">Cleanup 24h+ Data</button>
+            <button class="btn btn-warning" onclick="openAccountSettings()">Account Settings</button>
             <button class="btn btn-danger" onclick="logout()">Logout</button>
         </div>
     </div>
@@ -82,6 +83,64 @@
                     <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Account Settings modal -->
+    <div id="accountModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeAccountModal()">&times;</span>
+            <h3>Account Settings</h3>
+            
+            <div id="accountMessage" class="modal-message"></div>
+            
+            <div class="account-sections-container">
+                <!-- Username Change Section -->
+                <div class="account-section">
+                    <h4>Change Username</h4>
+                    <form id="usernameForm">
+                        <div class="form-group">
+                            <label for="currentUsername">Current Username</label>
+                            <input type="text" id="currentUsername" disabled>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="newUsername">New Username (2-20 characters)</label>
+                            <input type="text" id="newUsername" minlength="2" maxlength="20" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="usernamePassword">Current Password</label>
+                            <input type="password" id="usernamePassword" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Update Username</button>
+                    </form>
+                </div>
+                
+                <!-- Password Change Section -->
+                <div class="account-section">
+                    <h4>Change Password</h4>
+                    <form id="passwordForm">
+                        <div class="form-group">
+                            <label for="currentPassword">Current Password</label>
+                            <input type="password" id="currentPassword" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="newPassword">New Password</label>
+                            <input type="password" id="newPassword" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm New Password</label>
+                            <input type="password" id="confirmPassword" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Update Password</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 

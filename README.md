@@ -179,8 +179,7 @@ The codebase underwent a comprehensive refactoring to improve maintainability an
 #### UI/UX Improvements
 - **Fixed Color Coding**: Updated event markers to match specifications:
   - Earthquakes: White markers
-  - Wildfires: Brown markers  
-  - Solar Flares: Yellow markers
+  - Wildfires: Brown markers
 - **Enhanced Admin Dashboard**: 
   - Fixed dark theme consistency with proper text colors
   - Implemented scrolling for large event lists

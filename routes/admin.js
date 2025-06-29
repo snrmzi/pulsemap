@@ -174,4 +174,115 @@ router.post('/refresh', requireAuth, async (req, res) => {
   }
 });
 
+// Get current user info
+router.get('/user-info', requireAuth, (req, res) => {
+  res.json({
+    id: req.session.adminUser.id,
+    username: req.session.adminUser.username
+  });
+});
+
+// Change username
+router.post('/change-username', requireAuth, (req, res) => {
+  const { newUsername, currentPassword } = req.body;
+  const db = req.app.locals.db;
+  const userId = req.session.adminUser.id;
+  
+  // Validation
+  if (!newUsername || newUsername.length < 2 || newUsername.length > 20) {
+    return res.status(400).json({ error: 'Username must be between 2 and 20 characters' });
+  }
+  
+  if (!currentPassword) {
+    return res.status(400).json({ error: 'Current password is required' });
+  }
+  
+  // First verify current password
+  db.get('SELECT * FROM admin_users WHERE id = ?', [userId], (err, user) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (!user || !bcrypt.compareSync(currentPassword, user.password_hash)) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+    
+    // Check if username already exists (if different from current)
+    if (newUsername !== user.username) {
+      db.get('SELECT id FROM admin_users WHERE username = ? AND id != ?', [newUsername, userId], (err, existingUser) => {
+        if (err) {
+          console.error('Database error:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (existingUser) {
+          return res.status(400).json({ error: 'Username already exists' });
+        }
+        
+        // Update username
+        db.run('UPDATE admin_users SET username = ? WHERE id = ?', [newUsername, userId], function(err) {
+          if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          // Update session
+          req.session.adminUser.username = newUsername;
+          req.session.save((err) => {
+            if (err) {
+              console.error('Session save error:', err);
+              return res.status(500).json({ error: 'Session error' });
+            }
+            
+            res.json({ success: true, message: 'Username updated successfully' });
+          });
+        });
+      });
+    } else {
+      res.status(400).json({ error: 'New username must be different from current username' });
+    }
+  });
+});
+
+// Change password
+router.post('/change-password', requireAuth, (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const db = req.app.locals.db;
+  const userId = req.session.adminUser.id;
+  
+  // Validation
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'Current and new passwords are required' });
+  }
+  
+  if (currentPassword === newPassword) {
+    return res.status(400).json({ error: 'New password must be different from current password' });
+  }
+  
+  // Verify current password
+  db.get('SELECT * FROM admin_users WHERE id = ?', [userId], (err, user) => {
+    if (err) {
+      console.error('Database error:', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (!user || !bcrypt.compareSync(currentPassword, user.password_hash)) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
+    }
+    
+    // Hash new password and update
+    const newPasswordHash = bcrypt.hashSync(newPassword, 10);
+    
+    db.run('UPDATE admin_users SET password_hash = ? WHERE id = ?', [newPasswordHash, userId], function(err) {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      res.json({ success: true, message: 'Password updated successfully' });
+    });
+  });
+});
+
 module.exports = router;
