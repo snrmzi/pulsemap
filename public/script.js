@@ -13,7 +13,7 @@ const EVENT_COLORS = {
     tsunami: '#0066cc',      // blue
     volcano: '#cc3300',      // red
     wildfire: '#8B4513',     // brown (base color)
-    flood: '#6666ff',        // purple
+    flood: '#000080',        // navy blue
     solar_flare: '#ffff00'   // yellow
 };
 
@@ -129,6 +129,10 @@ function updateMapMarkers() {
         if (marker._wildfireCircle) {
             map.removeLayer(marker._wildfireCircle);
         }
+        // Remove flood circle if it exists
+        if (marker._floodCircle) {
+            map.removeLayer(marker._floodCircle);
+        }
     });
     markers = [];
     
@@ -153,6 +157,11 @@ function updateMapMarkers() {
             // Add wildfire circle to map if it exists
             if (marker._wildfireCircle) {
                 marker._wildfireCircle.addTo(map);
+            }
+            
+            // Add flood circle to map if it exists
+            if (marker._floodCircle) {
+                marker._floodCircle.addTo(map);
             }
         }
     });
@@ -214,6 +223,25 @@ function createEventMarker(event) {
         // Store the circle reference with the marker for cleanup
         marker._wildfireCircle = circle;
     }
+
+    // Add affected area circle for floods
+    if (event.type === 'flood') {
+        // Calculate radius based on severity (15-100km range)
+        const severity = event.magnitude || 1;
+        const radius = Math.max(15000, Math.min(100000, severity * 25000)); // 15-100km based on severity
+        
+        const circle = L.circle([event.latitude, event.longitude], {
+            color: color,
+            fillColor: color,
+            fillOpacity: 0.1,
+            radius: radius,
+            weight: 2,
+            opacity: 0.6
+        });
+        
+        // Store the circle reference with the marker for cleanup
+        marker._floodCircle = circle;
+    }
     
     // Add popup
     const popupContent = createPopupContent(event);
@@ -249,6 +277,13 @@ function createPopupContent(event) {
         const alertLevels = { 1: 'Advisory', 2: 'Watch', 3: 'Warning' };
         const alertLevel = alertLevels[event.magnitude] || 'Unknown';
         content += `<p><strong>Alert Level:</strong> ${alertLevel}</p>`;
+    } else if (event.type === 'flood' && event.magnitude) {
+        // For floods, magnitude represents severity level
+        const severityLevels = { 1: 'Advisory', 2: 'Watch', 3: 'Warning' };
+        const severityLevel = severityLevels[Math.floor(event.magnitude)] || 'Unknown';
+        content += `<p><strong>Severity Level:</strong> ${severityLevel}</p>`;
+        const radius = Math.max(15, Math.min(100, event.magnitude * 25));
+        content += `<p><strong>Affected Radius:</strong> ${radius.toFixed(0)} km</p>`;
     } else if (event.magnitude) {
         // For earthquakes and others, show magnitude
         content += `<p><strong>Magnitude:</strong> ${event.magnitude}</p>`;
@@ -303,6 +338,10 @@ function updateEventsList() {
                 const alertLevels = { 1: 'Advisory', 2: 'Watch', 3: 'Warning' };
                 const alertLevel = alertLevels[event.magnitude] || 'Unknown';
                 magnitudeDisplay = `<div class="event-magnitude">Alert Level: ${alertLevel}</div>`;
+            } else if (event.type === 'flood') {
+                const severityLevels = { 1: 'Advisory', 2: 'Watch', 3: 'Warning' };
+                const severityLevel = severityLevels[Math.floor(event.magnitude)] || 'Unknown';
+                magnitudeDisplay = `<div class="event-magnitude">Severity: ${severityLevel}</div>`;
             } else {
                 magnitudeDisplay = `<div class="event-magnitude">Magnitude: ${event.magnitude}</div>`;
             }

@@ -10,24 +10,24 @@ PulseMap is a real-time web application that provides live updates on natural di
 - **Detailed Information**: Click on map markers or sidebar events to view comprehensive details
 - **Admin Dashboard**: Secure admin panel for managing events and manual data refresh/cleanup
 - **Responsive Design**: Optimized for both desktop and mobile devices
-- **Intelligent Data Management**: Count-based limits for earthquakes (50) and volcanoes (50), top 100 wildfires by quality
+- **Intelligent Data Management**: Event limits: 100 for earthquakes/volcanoes/floods, 300 for wildfires, and all available for tsunamis
 - **Clean Architecture**: Separated HTML, CSS, and JavaScript for maintainability
 - **Interactive Navigation**: Click sidebar events to center and zoom map to event location
 - **24-Hour Data Cleanup**: Manual cleanup removes all data older than 24 hours
 
 ## Current Data Sources
 
-- **🌍 Earthquakes**: USGS Earthquake API (magnitude > 2.0, latest 50 events)
+- **🌍 Earthquakes**: USGS Earthquake API (magnitude > 2.0, latest 100 events)
 - **🌊 Tsunamis**: NOAA Tsunami Warning API (active alerts + 1 demo event)
-- **🌋 Volcanoes**: Smithsonian Global Volcanism Program (2010-present, latest 50 events)
-- **🔥 Wildfires**: NASA FIRMS API (top 100 highest quality fires by confidence and brightness)
+- **🌋 Volcanoes**: Smithsonian Global Volcanism Program (2010-present, latest 100 events)
+- **🔥 Wildfires**: NASA FIRMS API (latest 300 highest quality fires by confidence and brightness)
+- **💧 Floods**: NOAA Weather Service API (latest 100 highest severity flood alerts)
 
 ## Planned Features
 
 Future development will include:
 - **☀️ Solar Flares**: Space weather and solar activity monitoring  
-- **💧 Floods**: Flood alert and monitoring systems
-- **🔔 Real-time Notifications**: Push alerts for critical events
+- ** Real-time Notifications**: Push alerts for critical events
 - **📊 Enhanced Analytics**: Historical trends and patterns
 - **🔍 Advanced Filtering**: More sophisticated search and filter options
 
@@ -38,7 +38,7 @@ Future development will include:
 - **Frontend**: Vanilla HTML/CSS/JavaScript (fully separated and organized)
 - **Maps**: Leaflet.js with custom styling
 - **Authentication**: bcryptjs + express-session
-- **APIs**: USGS Earthquake API, NOAA Tsunami API, Smithsonian Global Volcanism Program, NASA FIRMS API
+- **APIs**: USGS Earthquake API, NOAA Tsunami API, NOAA Weather Service API, Smithsonian Global Volcanism Program, NASA FIRMS API
 - **Deployment**: Configured for Fly.io with Docker support
 
 ## Color Coding
@@ -84,11 +84,13 @@ Default login:
 ## Data Sources
 
 The application integrates with multiple real-time APIs:
-- **USGS Earthquake API**: Live earthquake data (magnitude 2.5+)
+- **USGS Earthquake API**: Live earthquake data (magnitude 2.0+)
 - **NOAA Tsunami API**: Active tsunami warnings, watches, and advisories  
+- **NOAA Weather Service API**: Flood warnings, watches, and advisories
 - **Smithsonian Global Volcanism Program**: Volcanic eruptions from 2010-present
+- **NASA FIRMS API**: Real-time wildfire detection data
 
-Data is fetched every 10 minutes and stored locally in SQLite. The system automatically removes old earthquake data after 7 days while preserving tsunami and volcano data for 15 years for historical analysis.
+Data is fetched manually on server startup and via admin dashboard refresh. The system maintains a 24-hour data retention policy with automatic cleanup removing older events.
 
 ## Deployment
 

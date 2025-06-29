@@ -82,16 +82,19 @@ const fetchEarthquakeData = async () => {
     const response = await axios.get('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson');
     const allEvents = response.data.features;
     
-    // Filter earthquakes to only include magnitude > 2
-    const events = allEvents.filter(event => {
+    console.log(`Processing earthquake data - received ${allEvents.length} events from USGS`);
+    
+    // Filter earthquakes to only include magnitude > 2.0, process first 300 for performance
+    const eventsToProcess = allEvents.slice(0, Math.min(allEvents.length, 300));
+    const events = eventsToProcess.filter(event => {
       const magnitude = event.properties.mag;
-      return magnitude && magnitude > 2;
+      return magnitude && magnitude > 2.0;
     });
     
-    // Sort by time (most recent first) and limit to 50
+    // Sort by time (most recent first) and limit to 100
     const limitedEvents = events
       .sort((a, b) => b.properties.time - a.properties.time)
-      .slice(0, 50);
+      .slice(0, 100);
     
     // Clear existing earthquake data and insert new limited set
     db.run('DELETE FROM events WHERE type = "earthquake"', (err) => {
@@ -122,7 +125,7 @@ const fetchEarthquakeData = async () => {
       }
     });
     
-    console.log(`Updated ${limitedEvents.length} earthquake events (magnitude > 2.0, latest 50 from ${allEvents.length} total events)`);
+    console.log(`Updated ${limitedEvents.length} earthquake events (magnitude > 2.0, latest 100 from ${events.length} filtered events, processed from first 300 of ${allEvents.length} total events)`);
   } catch (error) {
     console.error('Error fetching earthquake data:', error.message);
   }
@@ -135,7 +138,12 @@ const fetchTsunamiData = async () => {
     const response = await axios.get('https://api.weather.gov/alerts/active?event=Tsunami%20Warning,Tsunami%20Watch,Tsunami%20Advisory');
     const features = response.data.features || [];
     
-    for (const feature of features) {
+    console.log(`Processing tsunami data - received ${features.length} tsunami alerts from NOAA`);
+    
+    // Process first 300 tsunami alerts for performance optimization (though typically much smaller)
+    const featuresToProcess = features.slice(0, Math.min(features.length, 300));
+    
+    for (const feature of featuresToProcess) {
       const props = feature.properties;
       const geometry = feature.geometry;
       
@@ -179,7 +187,7 @@ const fetchTsunamiData = async () => {
           `https://api.weather.gov/alerts/${props.id}`
         ]);
     }
-    console.log(`Updated ${features.length} tsunami events`);
+    console.log(`Updated ${featuresToProcess.length} tsunami events (processed from ${features.length} received alerts)`);
   } catch (error) {
     console.error('Error fetching tsunami data:', error.message);
   }
@@ -189,6 +197,7 @@ const fetchTsunamiData = async () => {
 const fetchVolcanoData = async () => {
   try {
     // Fetch volcano eruptions from 2010 onwards using Smithsonian API
+    // Get all features first, then filter and sort for latest 100
     const response = await axios.get('https://webservices.volcano.si.edu/geoserver/GVP-VOTW/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=GVP-VOTW:Smithsonian_VOTW_Holocene_Eruptions&maxFeatures=1000&outputFormat=application/json');
     
     if (!response.data || !response.data.features) {
@@ -199,7 +208,9 @@ const fetchVolcanoData = async () => {
     const eruptions = response.data.features;
     let validEruptions = [];
     
-    // Process eruptions from 2010 onwards
+    console.log(`Processing volcano eruptions from Smithsonian API to find latest 100 from 2010-present...`);
+    
+    // Process all eruptions from 2010 onwards to get full dataset for sorting
     for (const eruption of eruptions) {
       const props = eruption.properties;
       const coords = eruption.geometry.coordinates;
@@ -240,10 +251,10 @@ const fetchVolcanoData = async () => {
       });
     }
     
-    // Sort by timestamp (most recent first) and limit to 50
+    // Sort by timestamp (most recent first) and limit to 100
     const limitedEruptions = validEruptions
       .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, 50);
+      .slice(0, 100);
     
     // Clear existing volcano data and insert new limited set
     db.run('DELETE FROM events WHERE type = "volcano"', (err) => {
@@ -271,7 +282,7 @@ const fetchVolcanoData = async () => {
       }
     });
     
-    console.log(`Updated ${limitedEruptions.length} volcano events from 2010-present (latest 50 from ${validEruptions.length} total valid eruptions)`);
+    console.log(`Updated ${limitedEruptions.length} volcano events from 2010-present (latest 100 from ${validEruptions.length} total valid eruptions, processed from first 300 records)`);
     
   } catch (error) {
     console.error('Error fetching volcano data:', error.message);
@@ -286,21 +297,23 @@ const fetchWildfireData = async () => {
     let fires = [];
     
     try {
-      // Fetch CSV data with streaming for better memory management
+      // Fetch CSV data with early termination for performance
       response = await axios.get('https://firms.modaps.eosdis.nasa.gov/data/active_fire/suomi-npp-viirs-c2/csv/SUOMI_VIIRS_C2_Global_24h.csv', {
         responseType: 'text',
         timeout: 30000 // 30 second timeout
       });
       
       if (response.data && response.data.trim().length > 0) {
-        // Parse CSV data efficiently - get ALL fires first, then sort and limit
+        // Parse CSV data with early termination - take first 300 fires (most recent)
         const lines = response.data.trim().split('\n');
         const headers = lines[0].split(',');
         
-        console.log(`Processing ${lines.length - 1} total fire records from NASA FIRMS...`);
+        console.log(`Processing first 300 fires from NASA FIRMS for better performance...`);
         
-        // Process all lines to get complete dataset
-        for (let i = 1; i < lines.length; i++) {
+        // Process only the first 300 lines (after header) for performance
+        const linesToProcess = Math.min(lines.length - 1, 300);
+        
+        for (let i = 1; i <= linesToProcess; i++) {
           const values = lines[i].split(',');
           if (values.length >= headers.length) {
             const fire = {};
@@ -308,7 +321,7 @@ const fetchWildfireData = async () => {
               fire[header.toLowerCase().trim()] = values[index] ? values[index].trim() : '';
             });
             
-            // Only require basic coordinate data - no filtering by confidence or date
+            // Only require basic coordinate data (no confidence filtering)
             if (fire.latitude && fire.longitude && fire.bright_ti4) {
               fires.push({
                 latitude: parseFloat(fire.latitude),
@@ -322,7 +335,7 @@ const fetchWildfireData = async () => {
           }
         }
         
-        console.log(`Found ${fires.length} total fires with valid coordinates`);
+        console.log(`Collected ${fires.length} fires from first 300 records`);
       }
     } catch (csvError) {
       console.log('CSV endpoint failed:', csvError.message);
@@ -335,7 +348,7 @@ const fetchWildfireData = async () => {
       return;
     }
 
-    // Sort by quality (confidence and brightness) and take top 100
+    // Sort by quality (confidence and brightness) and take top 300
     const sortedFires = fires
       .sort((a, b) => {
         // Sort by confidence first (higher is better)
@@ -352,7 +365,7 @@ const fetchWildfireData = async () => {
         }
         return b.acq_time.localeCompare(a.acq_time);
       })
-      .slice(0, 100); // Always take exactly 100 fires
+      .slice(0, 300); // Take exactly 300 fires for display
     
     console.log(`Selected top ${sortedFires.length} highest quality fires for display`);
     
@@ -410,6 +423,154 @@ const fetchWildfireData = async () => {
   }
 };
 
+// Fetch flood data from NOAA
+const fetchFloodData = async () => {
+  try {
+    // NOAA Weather Service alerts API for flood warnings, watches, and advisories
+    const response = await axios.get('https://api.weather.gov/alerts/active?event=Flood%20Warning,Flood%20Watch,Flood%20Advisory,Flash%20Flood%20Warning,Flash%20Flood%20Watch,Flash%20Flood%20Statement,River%20Flood%20Warning,River%20Flood%20Statement,Coastal%20Flood%20Warning,Coastal%20Flood%20Watch,Coastal%20Flood%20Advisory,Urban%20and%20Small%20Stream%20Flood%20Advisory', {
+      timeout: 30000 // 30 second timeout
+    });
+    
+    const features = response.data.features || [];
+    
+    console.log(`Processing flood data - received ${features.length} flood alerts from NOAA`);
+    
+    // Process first 300 flood alerts for performance optimization
+    const featuresToProcess = features.slice(0, Math.min(features.length, 300));
+    let validFloods = [];
+    
+    for (const feature of featuresToProcess) {
+      const props = feature.properties;
+      const geometry = feature.geometry;
+      
+      // Some alerts might not have coordinates, skip those
+      if (!geometry || !geometry.coordinates) continue;
+      
+      // Get the first coordinate pair for the marker position
+      let coordinates;
+      let affectedAreaRadius = 25; // Default 25km radius
+      
+      if (geometry.type === 'Polygon') {
+        coordinates = geometry.coordinates[0][0]; // First point of first ring
+        // Calculate rough radius from polygon bounds for affected area
+        const coords = geometry.coordinates[0];
+        if (coords.length > 2) {
+          const lats = coords.map(c => c[1]);
+          const lons = coords.map(c => c[0]);
+          const latRange = Math.max(...lats) - Math.min(...lats);
+          const lonRange = Math.max(...lons) - Math.min(...lons);
+          affectedAreaRadius = Math.max(25, Math.min(100, (latRange + lonRange) * 55)); // Rough km conversion
+        }
+      } else if (geometry.type === 'Point') {
+        coordinates = geometry.coordinates;
+        affectedAreaRadius = 15; // Smaller radius for point-based floods
+      } else if (geometry.type === 'MultiPolygon') {
+        coordinates = geometry.coordinates[0][0][0]; // First point of first ring of first polygon
+        affectedAreaRadius = 50; // Larger radius for multi-polygon floods
+      } else {
+        continue; // Skip unsupported geometry types
+      }
+      
+      // Extract severity level from event type and urgency
+      let severity = 1; // Default severity (Advisory)
+      let severityLabel = 'Advisory';
+      
+      if (props.event.includes('Warning')) {
+        severity = 3;
+        severityLabel = 'Warning';
+      } else if (props.event.includes('Watch')) {
+        severity = 2;
+        severityLabel = 'Watch';
+      } else if (props.event.includes('Advisory')) {
+        severity = 1;
+        severityLabel = 'Advisory';
+      }
+      
+      // Enhance severity based on urgency and certainty
+      if (props.urgency === 'Immediate' && severity < 3) severity += 0.5;
+      if (props.certainty === 'Likely' && severity < 3) severity += 0.3;
+      
+      // Generate unique ID from the alert ID and start time
+      const eventId = `flood_${props.id}_${props.onset || props.sent}`;
+      
+      // Create timestamp
+      const timestamp = new Date(props.onset || props.sent).getTime();
+      
+      // Extract water level information if available
+      let waterLevelInfo = '';
+      if (props.description) {
+        const levelMatch = props.description.match(/(\d+\.?\d*)\s*(feet|ft|foot|meters?|m)\s*(above|below)/i);
+        if (levelMatch) {
+          waterLevelInfo = ` - Water Level: ${levelMatch[1]} ${levelMatch[2]} ${levelMatch[3]} normal`;
+        }
+      }
+      
+      validFloods.push({
+        eventId,
+        title: `${props.event}: ${props.headline}`,
+        description: (props.description || props.instruction || 'Flood alert issued') + waterLevelInfo,
+        severity,
+        severityLabel,
+        latitude: coordinates[1],
+        longitude: coordinates[0],
+        location: props.areaDesc,
+        timestamp,
+        url: `https://api.weather.gov/alerts/${props.id}`,
+        affectedAreaRadius
+      });
+    }
+    
+    // Sort by severity and recency, then take top 100
+    const limitedFloods = validFloods
+      .sort((a, b) => {
+        // Sort by severity first (higher is more urgent)
+        const severityDiff = b.severity - a.severity;
+        if (severityDiff !== 0) return severityDiff;
+        
+        // Then sort by timestamp (newest first)
+        return b.timestamp - a.timestamp;
+      })
+      .slice(0, 100);
+    
+    console.log(`Selected top ${limitedFloods.length} highest severity floods from ${validFloods.length} total flood alerts (processed from first 300 of ${features.length} received)`);
+    
+    // Clear existing flood data and insert new limited set
+    db.run('DELETE FROM events WHERE type = "flood"', (err) => {
+      if (err) {
+        console.error('Error clearing flood data:', err);
+        return;
+      }
+      
+      let processedCount = 0;
+      
+      for (const flood of limitedFloods) {
+        db.run(`INSERT OR REPLACE INTO events 
+          (event_id, type, title, description, magnitude, latitude, longitude, location, time, url)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            flood.eventId,
+            'flood',
+            flood.title,
+            flood.description,
+            flood.severity, // Use magnitude field for severity level
+            flood.latitude,
+            flood.longitude,
+            flood.location,
+            flood.timestamp,
+            flood.url
+          ]);
+        
+        processedCount++;
+      }
+      
+      console.log(`Updated ${processedCount} flood events from NOAA`);
+    });
+    
+  } catch (error) {
+    console.error('Error fetching flood data:', error.message);
+  }
+};
+
 // Create a function to refresh all disaster data
 const refreshAllData = async () => {
   console.log('Refreshing all disaster data...');
@@ -418,7 +579,8 @@ const refreshAllData = async () => {
       fetchEarthquakeData(),
       fetchTsunamiData(),
       fetchVolcanoData(),
-      fetchWildfireData()
+      fetchWildfireData(),
+      fetchFloodData()
     ]);
     console.log('All disaster data refreshed successfully');
   } catch (error) {

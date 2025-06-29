@@ -7,15 +7,11 @@ router.get('/events', (req, res) => {
   const { type } = req.query;
   
   if (type) {
-    // If filtering by specific type, apply limits for earthquakes and volcanoes
-    let query = 'SELECT * FROM events WHERE type = ? ORDER BY time DESC';
-    let limit = '';
+    // Special case for wildfires: allow 300 events, others get 100 for consistency
+    let limit = type === 'wildfire' ? 300 : 100;
+    let query = `SELECT * FROM events WHERE type = ? ORDER BY time DESC LIMIT ${limit}`;
     
-    if (type === 'earthquake' || type === 'volcano') {
-      limit = ' LIMIT 50';
-    }
-    
-    db.all(query + limit, [type], (err, rows) => {
+    db.all(query, [type], (err, rows) => {
       if (err) {
         console.error('Database error:', err);
         return res.status(500).json({ error: 'Database error' });
@@ -23,11 +19,14 @@ router.get('/events', (req, res) => {
       res.json(rows);
     });
   } else {
-    // Get all events with limits for earthquakes and volcanoes
+    // Get all events with limits: 300 for wildfires, 100 for others
     const queries = [
-      'SELECT * FROM events WHERE type = "earthquake" ORDER BY time DESC LIMIT 50',
-      'SELECT * FROM events WHERE type = "volcano" ORDER BY time DESC LIMIT 50', 
-      'SELECT * FROM events WHERE type NOT IN ("earthquake", "volcano") ORDER BY time DESC'
+      'SELECT * FROM events WHERE type = "earthquake" ORDER BY time DESC LIMIT 100',
+      'SELECT * FROM events WHERE type = "volcano" ORDER BY time DESC LIMIT 100',
+      'SELECT * FROM events WHERE type = "tsunami" ORDER BY time DESC LIMIT 100',
+      'SELECT * FROM events WHERE type = "wildfire" ORDER BY time DESC LIMIT 300',
+      'SELECT * FROM events WHERE type = "flood" ORDER BY time DESC LIMIT 100',
+      'SELECT * FROM events WHERE type NOT IN ("earthquake", "volcano", "tsunami", "wildfire", "flood") ORDER BY time DESC LIMIT 100'
     ];
     
     let allEvents = [];
