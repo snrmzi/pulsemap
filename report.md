@@ -393,6 +393,42 @@ Created SQLite tables:
 
 ---
 
+### 2025-12-29 - Performance Optimization - Event Count Limits
+
+**Time**: Performance tuning and data optimization
+**Developer**: San
+
+#### ✅ Event Count Optimization
+- **Earthquake Limits**: Limited to latest 50 earthquakes (magnitude > 2.0) for optimal performance
+- **Volcano Limits**: Limited to latest 50 volcano eruptions from 2010-present for faster loading
+- **Smart Data Management**: Clear and replace strategy ensures fresh, relevant data
+- **API Performance**: Modified `/api/events` endpoint to handle count limits efficiently
+- **Database Efficiency**: Reduced storage overhead and query response times
+
+#### ✅ Technical Implementation
+- **Server-side Filtering**: Sort and limit events during data fetch rather than in database queries
+- **Clear and Replace**: Delete existing data before inserting new limited dataset
+- **API Route Updates**: Enhanced `/api/events` to respect limits for earthquakes and volcanoes
+- **Retention Policy Updates**: Removed time-based cleanup for earthquakes/volcanoes (now count-based)
+- **Performance Monitoring**: Improved logging to track data processing efficiency
+
+#### ✅ User Experience Benefits
+- **Faster Map Loading**: Reduced marker count improves rendering performance
+- **Responsive Interface**: Smoother interaction with optimized data sets
+- **Recent Relevance**: Focus on most recent and significant events
+- **Consistent Performance**: Predictable load times regardless of global seismic activity
+- **Mobile Optimization**: Better performance on mobile devices with limited resources
+
+---
+
+**Status**: ✅ Performance optimized with smart event limits
+**Data Management**: Count-based limits for earthquakes (50) and volcanoes (50)
+**Performance**: Improved loading times and map responsiveness
+**User Experience**: Faster, more responsive interface with relevant recent data
+**Technical Debt**: Reduced database size and improved query performance
+
+---
+
 ## 🚀 Next Development Phase - Additional Disaster Types & Features
 
 ### **Planned Implementations:**

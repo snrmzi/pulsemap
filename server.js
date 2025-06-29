@@ -88,27 +88,41 @@ const fetchEarthquakeData = async () => {
       return magnitude && magnitude > 2;
     });
     
-    for (const event of events) {
-      const props = event.properties;
-      const coords = event.geometry.coordinates;
+    // Sort by time (most recent first) and limit to 50
+    const limitedEvents = events
+      .sort((a, b) => b.properties.time - a.properties.time)
+      .slice(0, 50);
+    
+    // Clear existing earthquake data and insert new limited set
+    db.run('DELETE FROM events WHERE type = "earthquake"', (err) => {
+      if (err) {
+        console.error('Error clearing earthquake data:', err);
+        return;
+      }
       
-      db.run(`INSERT OR REPLACE INTO events 
-        (event_id, type, title, magnitude, depth, latitude, longitude, location, time, url)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          event.id,
-          'earthquake',
-          props.title,
-          props.mag,
-          coords[2], // depth
-          coords[1], // latitude
-          coords[0], // longitude
-          props.place,
-          props.time,
-          props.url
-        ]);
-    }
-    console.log(`Updated ${events.length} earthquake events (magnitude > 2.0) from ${allEvents.length} total events`);
+      for (const event of limitedEvents) {
+        const props = event.properties;
+        const coords = event.geometry.coordinates;
+        
+        db.run(`INSERT OR REPLACE INTO events 
+          (event_id, type, title, magnitude, depth, latitude, longitude, location, time, url)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            event.id,
+            'earthquake',
+            props.title,
+            props.mag,
+            coords[2], // depth
+            coords[1], // latitude
+            coords[0], // longitude
+            props.place,
+            props.time,
+            props.url
+          ]);
+      }
+    });
+    
+    console.log(`Updated ${limitedEvents.length} earthquake events (magnitude > 2.0, latest 50 from ${allEvents.length} total events)`);
   } catch (error) {
     console.error('Error fetching earthquake data:', error.message);
   }
@@ -183,7 +197,7 @@ const fetchVolcanoData = async () => {
     }
 
     const eruptions = response.data.features;
-    let processedCount = 0;
+    let validEruptions = [];
     
     // Process eruptions from 2010 onwards
     for (const eruption of eruptions) {
@@ -213,26 +227,51 @@ const fetchVolcanoData = async () => {
         `Volcanic activity at ${props.ActivityArea}` : 
         `${props.Activity_Type} volcanic activity`;
       
-      db.run(`INSERT OR REPLACE INTO events 
-        (event_id, type, title, description, magnitude, latitude, longitude, location, time, url)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          eventId,
-          'volcano',
-          title,
-          description,
-          alertLevel, // Use magnitude field for alert level
-          coords[1], // latitude
-          coords[0], // longitude
-          props.Volcano_Name,
-          timestamp,
-          `https://volcano.si.edu/volcano.cfm?vn=${props.Volcano_Number}`
-        ]);
-      
-      processedCount++;
+      validEruptions.push({
+        eventId,
+        title,
+        description,
+        alertLevel,
+        latitude: coords[1],
+        longitude: coords[0],
+        location: props.Volcano_Name,
+        timestamp,
+        url: `https://volcano.si.edu/volcano.cfm?vn=${props.Volcano_Number}`
+      });
     }
     
-    console.log(`Updated ${processedCount} volcano events from 2010-present`);
+    // Sort by timestamp (most recent first) and limit to 50
+    const limitedEruptions = validEruptions
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 50);
+    
+    // Clear existing volcano data and insert new limited set
+    db.run('DELETE FROM events WHERE type = "volcano"', (err) => {
+      if (err) {
+        console.error('Error clearing volcano data:', err);
+        return;
+      }
+      
+      for (const eruption of limitedEruptions) {
+        db.run(`INSERT OR REPLACE INTO events 
+          (event_id, type, title, description, magnitude, latitude, longitude, location, time, url)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            eruption.eventId,
+            'volcano',
+            eruption.title,
+            eruption.description,
+            eruption.alertLevel, // Use magnitude field for alert level
+            eruption.latitude,
+            eruption.longitude,
+            eruption.location,
+            eruption.timestamp,
+            eruption.url
+          ]);
+      }
+    });
+    
+    console.log(`Updated ${limitedEruptions.length} volcano events from 2010-present (latest 50 from ${validEruptions.length} total valid eruptions)`);
     
   } catch (error) {
     console.error('Error fetching volcano data:', error.message);
@@ -389,18 +428,11 @@ fetchWildfireData();
 
 // Clean up old data every day at midnight with different retention policies
 cron.schedule('0 0 * * *', () => {
-  const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
   const fifteenYearsAgo = Date.now() - (15 * 365 * 24 * 60 * 60 * 1000);
   
-  // Clean up earthquakes older than 7 days
-  db.run('DELETE FROM events WHERE type = "earthquake" AND time < ?', [sevenDaysAgo], function(err) {
-    if (err) {
-      console.error('Error cleaning old earthquake data:', err);
-    } else {
-      console.log(`Cleaned up ${this.changes} old earthquake events`);
-    }
-  });
+  // Note: Earthquakes and volcanoes are now limited to 50 latest events each during fetch
+  // So no time-based cleanup needed for them
   
   // Clean up wildfires older than 30 days
   db.run('DELETE FROM events WHERE type = "wildfire" AND time < ?', [thirtyDaysAgo], function(err) {
@@ -411,12 +443,12 @@ cron.schedule('0 0 * * *', () => {
     }
   });
   
-  // Clean up tsunamis and volcanoes older than 15 years
-  db.run('DELETE FROM events WHERE type IN ("tsunami", "volcano") AND time < ?', [fifteenYearsAgo], function(err) {
+  // Clean up tsunamis older than 15 years
+  db.run('DELETE FROM events WHERE type = "tsunami" AND time < ?', [fifteenYearsAgo], function(err) {
     if (err) {
-      console.error('Error cleaning old tsunami/volcano data:', err);
+      console.error('Error cleaning old tsunami data:', err);
     } else {
-      console.log(`Cleaned up ${this.changes} old tsunami/volcano events`);
+      console.log(`Cleaned up ${this.changes} old tsunami events`);
     }
   });
 });

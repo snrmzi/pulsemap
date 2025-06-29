@@ -1,26 +1,56 @@
 const express = require('express');
 const router = express.Router();
 
-// Get all events with optional filtering
+// Get all events with optional filtering and limits
 router.get('/events', (req, res) => {
   const db = req.app.locals.db;
   const { type } = req.query;
   
-  let query = 'SELECT * FROM events ORDER BY time DESC';
-  let params = [];
-  
   if (type) {
-    query = 'SELECT * FROM events WHERE type = ? ORDER BY time DESC';
-    params = [type];
-  }
-  
-  db.all(query, params, (err, rows) => {
-    if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: 'Database error' });
+    // If filtering by specific type, apply limits for earthquakes and volcanoes
+    let query = 'SELECT * FROM events WHERE type = ? ORDER BY time DESC';
+    let limit = '';
+    
+    if (type === 'earthquake' || type === 'volcano') {
+      limit = ' LIMIT 50';
     }
-    res.json(rows);
-  });
+    
+    db.all(query + limit, [type], (err, rows) => {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json(rows);
+    });
+  } else {
+    // Get all events with limits for earthquakes and volcanoes
+    const queries = [
+      'SELECT * FROM events WHERE type = "earthquake" ORDER BY time DESC LIMIT 50',
+      'SELECT * FROM events WHERE type = "volcano" ORDER BY time DESC LIMIT 50', 
+      'SELECT * FROM events WHERE type NOT IN ("earthquake", "volcano") ORDER BY time DESC'
+    ];
+    
+    let allEvents = [];
+    let completed = 0;
+    
+    queries.forEach(query => {
+      db.all(query, (err, rows) => {
+        if (err) {
+          console.error('Database error:', err);
+          return res.status(500).json({ error: 'Database error' });
+        }
+        
+        allEvents = allEvents.concat(rows);
+        completed++;
+        
+        if (completed === queries.length) {
+          // Sort all events by time descending
+          allEvents.sort((a, b) => b.time - a.time);
+          res.json(allEvents);
+        }
+      });
+    });
+  }
 });
 
 // Get recent events for sidebar (last 20)
