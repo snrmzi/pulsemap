@@ -1,5 +1,5 @@
 app = "pulsemap"
-primary_region = "sea"
+primary_region = "ams"
 
 [build]
 
@@ -10,10 +10,21 @@ primary_region = "sea"
   auto_start_machines = true
   min_machines_running = 0
   processes = ["app"]
+  
+  [[http_service.checks]]
+    interval = "10s"
+    timeout = "2s"
+    grace_period = "5s"
+    method = "GET"
+    path = "/api/stats"
 
 [[vm]]
   size = "shared-cpu-1x"
-  memory = "256mb"
+  memory = "512mb"
+
+[mounts]
+  source = "pulsemap_data"
+  destination = "/app/data"
 
 [env]
   NODE_ENV = "production"

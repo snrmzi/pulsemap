@@ -134,12 +134,17 @@ Data is fetched manually on server startup and via admin dashboard refresh. The 
    fly auth login
    ```
 
-3. **Deploy the application**:
+3. **Create persistent volume for database**:
+   ```bash
+   fly volumes create pulsemap_data --size 1
+   ```
+
+4. **Deploy the application**:
    ```bash
    fly deploy
    ```
 
-4. **Configure secrets**:
+5. **Configure secrets**:
    ```bash
    fly secrets set SESSION_SECRET=your-random-session-secret-here
    ```

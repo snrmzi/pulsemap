@@ -28,8 +28,9 @@ app.use(session({
   }
 }));
 
-// Set up SQLite database
-const db = new sqlite3.Database('./pulsemap.db');
+// Set up SQLite database - use persistent volume in production
+const dbPath = process.env.NODE_ENV === 'production' ? '/app/data/pulsemap.db' : './pulsemap.db';
+const db = new sqlite3.Database(dbPath);
 
 // Create tables if they don't exist
 db.serialize(() => {
