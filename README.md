@@ -6,7 +6,8 @@ PulseMap is a real-time web application that provides live updates on natural di
 
 - **Interactive World Map**: Dark-themed world map with color-coded markers for different disaster types
 - **Manual Data Refresh**: Admin-controlled data updates on server startup and via refresh button
-- **Event Filtering**: Filter events by type using the dropdown menu
+- **Advanced Filtering**: Filter events by type and time range (1 hour to 30 days)
+- **Dynamic Statistics**: Event counts update automatically based on selected filters
 - **Detailed Information**: Click on map markers or sidebar events to view comprehensive details
 - **Admin Dashboard**: Secure admin panel for managing events and manual data refresh/cleanup
 - **Responsive Design**: Optimized for both desktop and mobile devices
@@ -28,7 +29,8 @@ PulseMap is a real-time web application that provides live updates on natural di
 Future development will include:
 - **Real-time Notifications**: Push alerts for critical events
 - **📊 Enhanced Analytics**: Historical trends and patterns
-- **🔍 Advanced Filtering**: More sophisticated search and filter options
+- **🌍 Geographic Filtering**: Filter events by region or country
+- **📱 Mobile App**: Progressive Web App (PWA) functionality
 
 ## Technical Stack
 

@@ -6,6 +6,7 @@ let map;
 let markers = [];
 let currentEvents = [];
 let eventFilter = '';
+let timeFilter = ''; // Hours to filter by (empty = no filter)
 
 // Configuration
 const EVENT_COLORS = {
@@ -74,6 +75,7 @@ function initMainPage() {
     initMap();
     loadEvents();
     setupEventFilter();
+    setupTimeFilter();
     
     // Note: Auto-refresh removed - data is now only updated on server startup 
     // and manual refresh from admin dashboard
@@ -96,8 +98,49 @@ function setupEventFilter() {
             eventFilter = e.target.value;
             updateMapMarkers();
             updateEventsList();
+            updateStats(); // Update stats when event filter changes
         });
     }
+}
+
+function setupTimeFilter() {
+    const timeFilterSelect = document.getElementById('timeFilter');
+    if (timeFilterSelect) {
+        timeFilterSelect.addEventListener('change', function(e) {
+            timeFilter = e.target.value;
+            updateMapMarkers();
+            updateEventsList();
+            updateStats(); // Update stats when time filter changes
+        });
+    }
+}
+
+// Helper function to filter events by time
+function filterEventsByTime(events) {
+    if (!timeFilter) return events;
+    
+    const now = Date.now();
+    const hoursInMs = parseInt(timeFilter) * 60 * 60 * 1000;
+    const cutoffTime = now - hoursInMs;
+    
+    return events.filter(event => {
+        return event.time >= cutoffTime;
+    });
+}
+
+// Helper function to apply all filters
+function applyAllFilters(events) {
+    let filteredEvents = [...events];
+    
+    // Apply event type filter
+    if (eventFilter) {
+        filteredEvents = filteredEvents.filter(event => event.type === eventFilter);
+    }
+    
+    // Apply time filter
+    filteredEvents = filterEventsByTime(filteredEvents);
+    
+    return filteredEvents;
 }
 
 async function loadEvents() {
@@ -134,11 +177,8 @@ function updateMapMarkers() {
     });
     markers = [];
     
-    // Filter events if needed
-    let eventsToShow = currentEvents;
-    if (eventFilter) {
-        eventsToShow = currentEvents.filter(event => event.type === eventFilter);
-    }
+    // Filter events with all active filters
+    let eventsToShow = applyAllFilters(currentEvents);
     
     // Add new markers
     eventsToShow.forEach(event => {
@@ -299,11 +339,8 @@ function updateEventsList() {
     const eventsList = document.getElementById('eventsList');
     if (!eventsList) return;
     
-    // Filter events if needed
-    let eventsToShow = currentEvents;
-    if (eventFilter) {
-        eventsToShow = currentEvents.filter(event => event.type === eventFilter);
-    }
+    // Filter events with all active filters
+    let eventsToShow = applyAllFilters(currentEvents);
     
     if (eventsToShow.length === 0) {
         eventsList.innerHTML = '<div class="no-events">No events found</div>';
@@ -365,6 +402,9 @@ function updateStats() {
     const statsContainer = document.getElementById('statsContainer');
     if (!statsContainer) return;
     
+    // Use filtered events instead of all events for statistics
+    const eventsToCount = applyAllFilters(currentEvents);
+    
     // Count events by type
     const eventCounts = {
         earthquake: 0,
@@ -376,7 +416,7 @@ function updateStats() {
         total: 0
     };
     
-    currentEvents.forEach(event => {
+    eventsToCount.forEach(event => {
         if (eventCounts.hasOwnProperty(event.type)) {
             eventCounts[event.type]++;
         }

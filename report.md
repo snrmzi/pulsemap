@@ -471,6 +471,60 @@ Created SQLite tables:
 
 ---
 
+### 2025-06-29 - Advanced Time-Based Filtering Implementation
+
+**Time**: UI enhancement and filtering system development
+**Developer**: San
+
+#### ✅ Time Range Filtering System
+- **Multiple Time Ranges**: Implemented 7 preset time filters (1 hour, 6 hours, 12 hours, 24 hours, 2 days, 1 week, 30 days)
+- **Client-Side Processing**: Efficient browser-based filtering without additional server requests
+- **Universal Application**: Single filter system works across all disaster types (earthquakes, volcanoes, tsunamis, wildfires, floods)
+- **No Default Filter**: System starts with all events visible, allowing users to choose their preferred time range
+- **Seamless Integration**: Time filter works alongside existing event type filters
+
+#### ✅ Dynamic Statistics Updates
+- **Real-Time Count Updates**: Event statistics automatically update based on selected time range
+- **Filtered Totals**: Total event count reflects only events within selected time window
+- **Type-Specific Counts**: Individual disaster type counts (earthquakes, volcanoes, etc.) update dynamically
+- **Synchronized Display**: Map markers, sidebar events, and statistics all reflect the same filtered dataset
+- **Performance Optimization**: Efficient counting algorithm prevents UI lag during filter changes
+
+#### ✅ Enhanced User Interface
+- **Intuitive Design**: Time filter dropdown positioned next to event type filter for logical grouping
+- **Consistent Styling**: Matches existing dark theme and UI components
+- **Clear Labels**: Human-readable time range options (e.g., "Last 1 Hour", "Last 30 Days")
+- **Responsive Layout**: Proper spacing and alignment on both desktop and mobile devices
+- **Visual Feedback**: Immediate response when filters are changed
+
+#### ✅ Technical Implementation
+- **Client-Side Filtering**: JavaScript-based time calculations for optimal performance
+- **Timestamp Processing**: Proper handling of event timestamps for accurate time range calculations
+- **Filter Coordination**: Seamless integration between event type and time range filters
+- **State Management**: Proper tracking of current filter states for consistent behavior
+- **Code Organization**: Clean separation of filtering logic in modular functions
+
+#### ✅ User Experience Benefits
+- **Focused Analysis**: Users can focus on recent events or examine longer-term patterns
+- **Reduced Clutter**: Time filtering helps manage information density on busy maps
+- **Flexible Exploration**: Easy switching between different time perspectives
+- **Data Insights**: Better understanding of event frequency and timing patterns
+- **Performance**: Faster map rendering with fewer markers when using shorter time ranges
+
+---
+
+**Status**: ✅ Advanced time-based filtering system fully implemented
+**Filtering Options**: 7 preset time ranges from 1 hour to 30 days
+**User Control**: Complete client-side filtering with dynamic statistics updates
+**Performance**: Optimized for real-time filtering without server requests
+**Integration**: Seamless coordination with existing event type filtering system
+
+---
+
+**Architecture**: Simplified data management with improved efficiency
+
+---
+
 ## 🚀 Next Development Phase - Additional Disaster Types & Features
 
 ### **Planned Implementations:**
