@@ -14,7 +14,7 @@ const EVENT_COLORS = {
     volcano: '#cc3300',      // red
     wildfire: '#8B4513',     // brown
     flood: '#6666ff',        // purple
-    solar: '#ffff00'         // yellow
+    solar_flare: '#ffff00'   // yellow
 };
 
 const EVENT_ICONS = {
@@ -23,7 +23,7 @@ const EVENT_ICONS = {
     volcano: '🌋',
     wildfire: '🔥',
     flood: '💧',
-    solar: '☀️'
+    solar_flare: '☀️'
 };
 
 // Initialize the application based on current page
@@ -253,7 +253,7 @@ function updateStats() {
         volcano: 0,
         wildfire: 0,
         flood: 0,
-        solar: 0,
+        solar_flare: 0,
         total: 0
     };
     
@@ -318,10 +318,10 @@ function updateStats() {
         `;
     }
     
-    if (eventCounts.solar > 0) {
+    if (eventCounts.solar_flare > 0) {
         statsHTML += `
             <div class="stat-item">
-                <span class="stat-number">${eventCounts.solar}</span>
+                <span class="stat-number">${eventCounts.solar_flare}</span>
                 <span class="stat-label">Solar Flares</span>
             </div>
         `;
