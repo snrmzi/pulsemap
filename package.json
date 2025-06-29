@@ -1,16 +1,16 @@
 {
   "name": "pulsemap",
   "version": "1.0.0",
-  "description": "Real-time natural disaster monitoring web app I built for my capstone project",
+  "description": "Real-time natural disaster monitoring web application with interactive maps, live API data feeds, and admin dashboard",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["disaster", "monitoring", "earthquakes", "tsunamis", "volcanoes", "maps"],
+  "keywords": ["disaster", "monitoring", "earthquakes", "tsunamis", "volcanoes", "maps", "real-time", "leaflet", "nodejs", "express"],
   "author": "",
-  "license": "ISC",
+  "license": "GPL-3.0",
   "dependencies": {
     "axios": "^1.10.0",
     "bcryptjs": "^3.0.2",

@@ -1,3 +1,7 @@
+/* ===============================
+   MAIN WEBSITE STYLES
+   =============================== */
+
 * {
     margin: 0;
     padding: 0;
@@ -11,10 +15,22 @@ body {
     overflow: hidden;
 }
 
+/* Admin body should allow scrolling */
+body:not(.login-body) {
+    overflow-y: auto;
+}
+
 .container {
     display: flex;
     flex-direction: column;
     height: 100vh;
+}
+
+/* Admin container should allow scrolling */
+.admin-container {
+    padding: 2rem;
+    min-height: calc(100vh - 80px);
+    overflow-y: auto;
 }
 
 header {
@@ -142,7 +158,7 @@ main {
 }
 
 .event-item.earthquake {
-    border-left-color: #dc2626;
+    border-left-color: #ffffff;
 }
 
 .event-item.tsunami {
@@ -154,7 +170,7 @@ main {
 }
 
 .event-item.wildfire {
-    border-left-color: #dc2626;
+    border-left-color: #8b4513;
 }
 
 .event-item.flood {
@@ -162,7 +178,7 @@ main {
 }
 
 .event-item.solar {
-    border-left-color: #facc15;
+    border-left-color: #ffd700;
 }
 
 .event-header {
@@ -183,7 +199,8 @@ main {
 }
 
 .event-icon.earthquake {
-    background-color: #dc2626;
+    background-color: #ffffff;
+    color: #000000;
 }
 
 .event-icon.tsunami {
@@ -195,7 +212,7 @@ main {
 }
 
 .event-icon.wildfire {
-    background-color: #dc2626;
+    background-color: #8b4513;
 }
 
 .event-icon.flood {
@@ -203,7 +220,8 @@ main {
 }
 
 .event-icon.solar {
-    background-color: #facc15;
+    background-color: #ffd700;
+    color: #000000;
 }
 
 .event-type {
@@ -345,4 +363,414 @@ main {
 
 .events-list::-webkit-scrollbar-thumb:hover {
     background: #666;
+}
+
+/* ===============================
+   ADMIN PAGE STYLES
+   =============================== */
+
+.header {
+    background-color: #2d2d2d;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #444;
+}
+
+.header h1 {
+    color: #ff6b35;
+    font-size: 1.5rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.btn {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-primary {
+    background-color: #ff6b35;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #e55a2b;
+}
+
+.btn-secondary {
+    background-color: #6b7280;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #4b5563;
+}
+
+.btn-danger {
+    background-color: #dc2626;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #b91c1c;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.stat-card {
+    background-color: #2d2d2d;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #444;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #ff6b35;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #ccc;
+    font-size: 0.9rem;
+}
+
+.events-section {
+    margin-top: 2rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.section-header h2 {
+    color: #ff6b35;
+    margin: 0;
+}
+
+.events-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background: #2d2d2d;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    color: #ffffff;
+}
+
+.events-table th,
+.events-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #444;
+    color: #ffffff;
+}
+
+.events-table th {
+    background-color: #3d3d3d;
+    font-weight: 600;
+    color: #ff6b35;
+}
+
+.events-table tr:hover {
+    background-color: #4d4d4d;
+}
+
+.events-table td {
+    color: #ffffff;
+}
+
+.event-type-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.event-type-badge.earthquake {
+    background-color: #333;
+    color: #ffffff;
+    border: 1px solid #ffffff;
+}
+
+.event-type-badge.tsunami {
+    background-color: #0891b2;
+    color: #ffffff;
+}
+
+.event-type-badge.volcano {
+    background-color: #ea580c;
+    color: #ffffff;
+}
+
+.event-type-badge.wildfire {
+    background-color: #8b4513;
+    color: #ffffff;
+}
+
+.event-type-badge.flood {
+    background-color: #2563eb;
+    color: #ffffff;
+}
+
+.event-type-badge.solar_flare {
+    background-color: #ffd700;
+    color: #000000;
+}
+
+.no-events {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    font-style: italic;
+}
+
+.message {
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    display: none;
+}
+
+.message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.message.info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Admin Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+.modal-content .close {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #666;
+}
+
+.modal-content .close:hover {
+    color: #000;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+/* ===============================
+   LOGIN PAGE STYLES
+   =============================== */
+
+.login-body {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.login-container {
+    background-color: #2d2d2d;
+    border-radius: 12px;
+    padding: 3rem;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    width: 100%;
+    max-width: 400px;
+    border: 1px solid #444;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-header h1 {
+    color: #ff6b35;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.login-header p {
+    color: #ccc;
+    font-size: 0.9rem;
+}
+
+.login-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.login-form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #ccc;
+    font-weight: 500;
+}
+
+.login-form-group input {
+    width: 100%;
+    padding: 12px;
+    background-color: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 16px;
+    transition: border-color 0.3s ease;
+}
+
+.login-form-group input:focus {
+    outline: none;
+    border-color: #ff6b35;
+    box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2);
+}
+
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #ff6b35;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-bottom: 1rem;
+}
+
+.login-btn:hover {
+    background-color: #e55a2b;
+}
+
+.login-btn:disabled {
+    background-color: #666;
+    cursor: not-allowed;
+}
+
+.back-link {
+    text-align: center;
+    margin-top: 1rem;
+}
+
+.back-link a {
+    color: #ff6b35;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.back-link a:hover {
+    text-decoration: underline;
+}
+
+.login-info-box {
+    background-color: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-top: 1.5rem;
+    font-size: 0.85rem;
+    color: #ccc;
+    text-align: center;
+}
+
+#message {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border-radius: 6px;
+    text-align: center;
+    display: none;
+}
+
+#message.error {
+    background-color: #dc2626;
+    color: white;
+}
+
+#message.success {
+    background-color: #16a34a;
+    color: white;
 }

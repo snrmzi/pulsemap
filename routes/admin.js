@@ -35,7 +35,16 @@ router.post('/login', (req, res) => {
     }
     
     req.session.adminUser = { id: user.id, username: user.username };
-    res.json({ success: true, message: 'Login successful' });
+    
+    // Save the session before responding
+    req.session.save((err) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({ error: 'Session error' });
+      }
+      console.log('Session saved successfully for user:', username);
+      res.json({ success: true, message: 'Login successful' });
+    });
   });
 });
 
@@ -56,6 +65,27 @@ router.get('/events', requireAuth, (req, res) => {
     }
     res.json(rows);
   });
+});
+
+// Create new event
+router.post('/events', requireAuth, (req, res) => {
+  const db = req.app.locals.db;
+  const { type, title, location, latitude, longitude, magnitude, depth, description, timestamp } = req.body;
+  
+  // Convert timestamp to Unix timestamp in milliseconds
+  const time = timestamp ? new Date(timestamp).getTime() : Date.now();
+  
+  db.run(`INSERT INTO events (type, title, location, latitude, longitude, magnitude, depth, description, time, source)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [type, title, location, latitude, longitude, magnitude, depth, description, time, 'admin'],
+    function(err) {
+      if (err) {
+        console.error('Database error:', err);
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      res.json({ success: true, message: 'Event created successfully', id: this.lastID });
+    });
 });
 
 // Update event

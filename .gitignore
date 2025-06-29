@@ -16,6 +16,10 @@ yarn-error.log*
 *.sqlite
 *.sqlite3
 
+# Testing files
+cookies.txt
+public/cookies.txt
+
 # Logs
 logs
 *.log
