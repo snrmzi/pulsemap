@@ -12,9 +12,27 @@ const EVENT_COLORS = {
     earthquake: '#ffffff',    // white
     tsunami: '#0066cc',      // blue
     volcano: '#cc3300',      // red
-    wildfire: '#8B4513',     // brown
+    wildfire: '#8B4513',     // brown (base color)
     flood: '#6666ff',        // purple
     solar_flare: '#ffff00'   // yellow
+};
+
+// Wildfire intensity color gradient (light brown to dark brown)
+const getWildfireColor = (intensity) => {
+    if (!intensity) return '#D2B48C'; // light brown default
+    
+    // Normalize intensity (0-1 scale) and create gradient from light to dark brown
+    const normalizedIntensity = Math.min(Math.max(intensity / 10, 0), 1);
+    
+    // Light brown to dark brown gradient
+    const lightBrown = { r: 210, g: 180, b: 140 }; // #D2B48C
+    const darkBrown = { r: 101, g: 67, b: 33 };    // #654321
+    
+    const r = Math.round(lightBrown.r + (darkBrown.r - lightBrown.r) * normalizedIntensity);
+    const g = Math.round(lightBrown.g + (darkBrown.g - lightBrown.g) * normalizedIntensity);
+    const b = Math.round(lightBrown.b + (darkBrown.b - lightBrown.b) * normalizedIntensity);
+    
+    return `rgb(${r}, ${g}, ${b})`;
 };
 
 const EVENT_ICONS = {
@@ -107,6 +125,10 @@ function updateMapMarkers() {
         if (marker._tsunamiCircle) {
             map.removeLayer(marker._tsunamiCircle);
         }
+        // Remove wildfire circle if it exists
+        if (marker._wildfireCircle) {
+            map.removeLayer(marker._wildfireCircle);
+        }
     });
     markers = [];
     
@@ -127,12 +149,24 @@ function updateMapMarkers() {
             if (marker._tsunamiCircle) {
                 marker._tsunamiCircle.addTo(map);
             }
+            
+            // Add wildfire circle to map if it exists
+            if (marker._wildfireCircle) {
+                marker._wildfireCircle.addTo(map);
+            }
         }
     });
 }
 
 function createEventMarker(event) {
-    const color = EVENT_COLORS[event.type] || '#666666';
+    // Get color based on event type, with special handling for wildfire intensity
+    let color;
+    if (event.type === 'wildfire') {
+        color = getWildfireColor(event.magnitude); // magnitude stores intensity for wildfires
+    } else {
+        color = EVENT_COLORS[event.type] || '#666666';
+    }
+    
     const icon = EVENT_ICONS[event.type] || '📍';
     
     // Create custom icon
@@ -147,7 +181,7 @@ function createEventMarker(event) {
     
     // Add affected area circle for tsunamis
     if (event.type === 'tsunami') {
-        // Use fixed 50km radius as requested, or calculate based on threat level
+        // Use fixed 50km radius as requested
         const radius = 50000; // 50km in meters
         const circle = L.circle([event.latitude, event.longitude], {
             color: color,
@@ -160,6 +194,25 @@ function createEventMarker(event) {
         
         // Store the circle reference with the marker for cleanup
         marker._tsunamiCircle = circle;
+    }
+    
+    // Add affected area circle for wildfires
+    if (event.type === 'wildfire') {
+        // Calculate radius based on intensity (1-5km range)
+        const intensity = event.magnitude || 1;
+        const radius = Math.max(1000, Math.min(5000, intensity * 500)); // 1-5km based on intensity
+        
+        const circle = L.circle([event.latitude, event.longitude], {
+            color: color,
+            fillColor: color,
+            fillOpacity: 0.1,
+            radius: radius,
+            weight: 2,
+            opacity: 0.6
+        });
+        
+        // Store the circle reference with the marker for cleanup
+        marker._wildfireCircle = circle;
     }
     
     // Add popup
@@ -186,7 +239,18 @@ function createPopupContent(event) {
         const threatLevel = threatLevels[event.magnitude] || 'Unknown';
         content += `<p><strong>Threat Level:</strong> ${threatLevel}</p>`;
         content += `<p><strong>Affected Radius:</strong> 50 km</p>`;
+    } else if (event.type === 'wildfire' && event.magnitude) {
+        // For wildfires, magnitude represents intensity
+        content += `<p><strong>Intensity:</strong> ${event.magnitude}/10</p>`;
+        const radius = Math.max(1, Math.min(5, event.magnitude * 0.5));
+        content += `<p><strong>Affected Radius:</strong> ${radius.toFixed(1)} km</p>`;
+    } else if (event.type === 'volcano' && event.magnitude) {
+        // For volcanoes, magnitude represents alert level
+        const alertLevels = { 1: 'Advisory', 2: 'Watch', 3: 'Warning' };
+        const alertLevel = alertLevels[event.magnitude] || 'Unknown';
+        content += `<p><strong>Alert Level:</strong> ${alertLevel}</p>`;
     } else if (event.magnitude) {
+        // For earthquakes and others, show magnitude
         content += `<p><strong>Magnitude:</strong> ${event.magnitude}</p>`;
     }
     
@@ -226,6 +290,24 @@ function updateEventsList() {
         const time = new Date(timestamp).toLocaleTimeString();
         const icon = EVENT_ICONS[event.type] || '📍';
         
+        // Get appropriate magnitude label based on event type
+        let magnitudeDisplay = '';
+        if (event.magnitude) {
+            if (event.type === 'tsunami') {
+                const threatLevels = { 1: 'Advisory', 2: 'Watch', 3: 'Warning' };
+                const threatLevel = threatLevels[event.magnitude] || 'Unknown';
+                magnitudeDisplay = `<div class="event-magnitude">Threat Level: ${threatLevel}</div>`;
+            } else if (event.type === 'wildfire') {
+                magnitudeDisplay = `<div class="event-magnitude">Intensity: ${event.magnitude}/10</div>`;
+            } else if (event.type === 'volcano') {
+                const alertLevels = { 1: 'Advisory', 2: 'Watch', 3: 'Warning' };
+                const alertLevel = alertLevels[event.magnitude] || 'Unknown';
+                magnitudeDisplay = `<div class="event-magnitude">Alert Level: ${alertLevel}</div>`;
+            } else {
+                magnitudeDisplay = `<div class="event-magnitude">Magnitude: ${event.magnitude}</div>`;
+            }
+        }
+        
         return `
             <div class="event-item" onclick="centerMapOnEvent(${event.latitude}, ${event.longitude})" style="cursor: pointer;">
                 <div class="event-icon">${icon}</div>
@@ -233,7 +315,7 @@ function updateEventsList() {
                     <div class="event-title">${event.title || `${event.type.charAt(0).toUpperCase() + event.type.slice(1)}`}</div>
                     <div class="event-location">${event.location || 'Unknown location'}</div>
                     <div class="event-time">${date} ${time}</div>
-                    ${event.magnitude ? `<div class="event-magnitude">Magnitude: ${event.magnitude}</div>` : ''}
+                    ${magnitudeDisplay}
                 </div>
             </div>
         `;

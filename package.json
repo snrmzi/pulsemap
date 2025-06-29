@@ -8,7 +8,7 @@
     "dev": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["disaster", "monitoring", "earthquakes", "tsunamis", "volcanoes", "maps", "real-time", "leaflet", "nodejs", "express"],
+  "keywords": ["disaster", "monitoring", "earthquakes", "tsunamis", "volcanoes", "wildfires", "maps", "real-time", "leaflet", "nodejs", "express"],
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {

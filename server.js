@@ -239,22 +239,158 @@ const fetchVolcanoData = async () => {
   }
 };
 
+// Fetch wildfire data from NASA FIRMS
+const fetchWildfireData = async () => {
+  try {
+    // Try the CSV endpoint instead and convert to JSON locally
+    // NASA FIRMS provides global active fire data - last 24 hours
+    let response;
+    let fires = [];
+    
+    try {
+      // Try CSV endpoint first
+      response = await axios.get('https://firms.modaps.eosdis.nasa.gov/data/active_fire/suomi-npp-viirs-c2/csv/SUOMI_VIIRS_C2_Global_24h.csv');
+      
+      if (response.data && response.data.trim().length > 0) {
+        // Parse CSV data
+        const lines = response.data.trim().split('\n');
+        const headers = lines[0].split(',');
+        
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(',');
+          if (values.length >= headers.length) {
+            const fire = {};
+            headers.forEach((header, index) => {
+              fire[header.toLowerCase().trim()] = values[index] ? values[index].trim() : '';
+            });
+            
+            // Map CSV fields to our expected format
+            if (fire.latitude && fire.longitude && fire.bright_ti4) {
+              fires.push({
+                latitude: parseFloat(fire.latitude),
+                longitude: parseFloat(fire.longitude),
+                brightness: parseFloat(fire.bright_ti4) || 300,
+                confidence: parseFloat(fire.confidence) || 50,
+                acq_date: fire.acq_date,
+                acq_time: fire.acq_time
+              });
+            }
+          }
+        }
+      }
+    } catch (csvError) {
+      console.log('CSV endpoint failed:', csvError.message);
+      console.log('No wildfire data available - API endpoint not accessible');
+    }
+    
+    if (fires.length === 0) {
+      console.log('No wildfire data available');
+      return;
+    }
+
+    // Debug: check what dates we have
+    const uniqueDates = [...new Set(fires.map(f => f.acq_date))].sort().reverse();
+    console.log(`Available fire data dates: ${uniqueDates.slice(0, 5).join(', ')} (showing first 5)`);
+
+    // Filter and limit fires efficiently
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const yesterdayStr = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    
+    // Sort fires by confidence and date (best quality first), then filter
+    const sortedFires = fires
+      .filter(fire => {
+        // More lenient filter: recent dates and reasonable confidence
+        return (fire.acq_date === todayStr || fire.acq_date === yesterdayStr) && 
+               fire.confidence >= 50; // Lower confidence threshold
+      })
+      .sort((a, b) => {
+        // Sort by confidence first (higher is better), then by date/time
+        const confidenceDiff = (b.confidence || 0) - (a.confidence || 0);
+        if (confidenceDiff !== 0) return confidenceDiff;
+        
+        // Then sort by date (newest first)
+        if (a.acq_date !== b.acq_date) {
+          return b.acq_date.localeCompare(a.acq_date);
+        }
+        return (b.acq_time || '0000').localeCompare(a.acq_time || '0000');
+      })
+      .slice(0, 100); // Take only the 100 most recent and reliable
+    
+    console.log(`Selected ${sortedFires.length} most recent fires from ${fires.length} total (confidence 50%+, last 24h)`);
+    
+    let processedCount = 0;
+    
+    // Clean up old wildfire data (30 days)
+    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    db.run('DELETE FROM events WHERE type = "wildfire" AND time < ?', [thirtyDaysAgo]);
+    
+    for (const fire of sortedFires) {
+      // Skip fires with very low confidence (redundant check, but keeping for safety)
+      if (fire.confidence < 50) continue;
+      
+      // Generate unique event ID based on coordinates and date
+      const eventId = `wildfire_${fire.latitude}_${fire.longitude}_${fire.acq_date}`;
+      
+      // Calculate intensity based on brightness and confidence
+      // Brightness ranges typically 300-400K, confidence 0-100
+      const normalizedBrightness = Math.min(Math.max((fire.brightness - 300) / 100, 0), 1);
+      const normalizedConfidence = fire.confidence / 100;
+      const intensity = Math.round((normalizedBrightness * 0.7 + normalizedConfidence * 0.3) * 10) / 10;
+      
+      // Create timestamp from acquisition date and time
+      const dateTime = `${fire.acq_date} ${fire.acq_time}`;
+      const timestamp = new Date(dateTime.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2})(\d{2})/, '$1-$2-$3T$4:$5:00Z')).getTime();
+      
+      // Create title and description
+      const title = `Active Fire Detection`;
+      const description = `Fire detected by satellite with ${fire.confidence}% confidence. Brightness: ${fire.brightness}K`;
+      
+      db.run(`INSERT OR REPLACE INTO events 
+        (event_id, type, title, description, magnitude, latitude, longitude, location, time, url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          eventId,
+          'wildfire',
+          title,
+          description,
+          intensity, // Use magnitude field for fire intensity
+          fire.latitude,
+          fire.longitude,
+          `${fire.latitude.toFixed(3)}, ${fire.longitude.toFixed(3)}`,
+          timestamp,
+          'https://firms.modaps.eosdis.nasa.gov/'
+        ]);
+      
+      processedCount++;
+    }
+    
+    console.log(`Updated ${processedCount} wildfire events from NASA FIRMS`);
+    
+  } catch (error) {
+    console.error('Error fetching wildfire data:', error.message);
+  }
+};
+
 // Schedule data fetching every 10 minutes
 cron.schedule('*/10 * * * *', () => {
   console.log('Fetching latest disaster data...');
   fetchEarthquakeData();
   fetchTsunamiData();
   fetchVolcanoData();
+  fetchWildfireData();
 });
 
 // Get initial data on startup
 fetchEarthquakeData();
 fetchTsunamiData();
 fetchVolcanoData();
+fetchWildfireData();
 
 // Clean up old data every day at midnight with different retention policies
 cron.schedule('0 0 * * *', () => {
   const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+  const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
   const fifteenYearsAgo = Date.now() - (15 * 365 * 24 * 60 * 60 * 1000);
   
   // Clean up earthquakes older than 7 days
@@ -263,6 +399,15 @@ cron.schedule('0 0 * * *', () => {
       console.error('Error cleaning old earthquake data:', err);
     } else {
       console.log(`Cleaned up ${this.changes} old earthquake events`);
+    }
+  });
+  
+  // Clean up wildfires older than 30 days
+  db.run('DELETE FROM events WHERE type = "wildfire" AND time < ?', [thirtyDaysAgo], function(err) {
+    if (err) {
+      console.error('Error cleaning old wildfire data:', err);
+    } else {
+      console.log(`Cleaned up ${this.changes} old wildfire events`);
     }
   });
   

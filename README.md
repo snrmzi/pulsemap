@@ -19,11 +19,11 @@ PulseMap is a real-time web application that provides live updates on natural di
 - **🌍 Earthquakes**: USGS Earthquake API (magnitude > 2.0, last 7 days)
 - **🌊 Tsunamis**: NOAA Tsunami Warning API (active alerts + 1 demo event)
 - **🌋 Volcanoes**: Smithsonian Global Volcanism Program (2010-present)
+- **🔥 Wildfires**: NASA FIRMS API (100 most recent fires, confidence 50%+, last 24h)
 
 ## Planned Features
 
 Future development will include:
-- **🔥 Wildfires**: Integration with fire monitoring APIs
 - **☀️ Solar Flares**: Space weather and solar activity monitoring  
 - **💧 Floods**: Flood alert and monitoring systems
 - **🔔 Real-time Notifications**: Push alerts for critical events
@@ -37,7 +37,7 @@ Future development will include:
 - **Frontend**: Vanilla HTML/CSS/JavaScript (fully separated and organized)
 - **Maps**: Leaflet.js with custom styling
 - **Authentication**: bcryptjs + express-session
-- **APIs**: USGS Earthquake API, NOAA Tsunami API, Smithsonian Global Volcanism Program
+- **APIs**: USGS Earthquake API, NOAA Tsunami API, Smithsonian Global Volcanism Program, NASA FIRMS API
 - **Deployment**: Configured for Fly.io with Docker support
 
 ## Color Coding
