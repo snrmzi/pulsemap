@@ -179,10 +179,6 @@ main {
     border-left-color: #2563eb;
 }
 
-.event-item.solar_flare {
-    border-left-color: #ffd700;
-}
-
 .event-header {
     display: flex;
     align-items: center;
@@ -219,11 +215,6 @@ main {
 
 .event-icon.flood {
     background-color: #2563eb;
-}
-
-.event-icon.solar_flare {
-    background-color: #ffd700;
-    color: #000000;
 }
 
 .event-type {
@@ -565,11 +556,6 @@ main {
 .event-type-badge.flood {
     background-color: #2563eb;
     color: #ffffff;
-}
-
-.event-type-badge.solar_flare {
-    background-color: #ffd700;
-    color: #000000;
 }
 
 .no-events {

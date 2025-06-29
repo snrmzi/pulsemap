@@ -4,7 +4,7 @@ This document tracks all the changes I made to the PulseMap project during devel
 
 ## Project Overview
 
-PulseMap is a real-time natural disaster monitoring web app that gives live updates on earthquakes, tsunamis, volcanoes, wildfires, floods and solar flares from various public APIs.
+PulseMap is a real-time natural disaster monitoring web app that gives live updates on earthquakes, tsunamis, volcanoes, wildfires, and floods from various public APIs.
 
 **Tech Stack**: Node.js + Express + SQLite + Leaflet.js + Vanilla HTML/CSS/JavaScript
 
@@ -250,8 +250,7 @@ Created SQLite tables:
 
 #### ✅ Color Coding System Fixed
 - **Earthquake Markers**: Updated to white as specified
-- **Wildfire Markers**: Updated to brown as specified  
-- **Solar Flare Markers**: Updated to yellow as specified
+- **Wildfire Markers**: Updated to brown as specified
 - **Consistent Theming**: Applied color scheme across map markers, event lists, and admin badges
 - **Visual Clarity**: Enhanced marker visibility and event type identification
 
@@ -332,7 +331,7 @@ Created SQLite tables:
 **User Experience**: Consistent dark theme with optimized usability, information density, and intuitive navigation
 **Data Quality**: Filtered and curated disaster data showing only significant events (earthquakes > 2.0 magnitude, wildfires 50%+ confidence)
 **Current Coverage**: Earthquakes, tsunamis, volcanoes, and wildfires fully functional with real APIs
-**Next Development Phase**: Ready to implement solar flares, floods, and enhanced features
+**Next Development Phase**: Ready to implement floods and enhanced features
 **Repository Status**: Ready for GitHub publication and continued development
 
 ---
@@ -475,18 +474,6 @@ Created SQLite tables:
 ## 🚀 Next Development Phase - Additional Disaster Types & Features
 
 ### **Planned Implementations:**
-
-#### ☀️ **Solar Flare & Space Weather**
-- Integrate NOAA Space Weather API
-- Monitor solar flares, geomagnetic storms, and radiation events
-- Add solar activity intensity levels (X, M, C class flares)
-- Implement global impact visualization for communication disruptions
-
-#### 💧 **Flood Monitoring**
-- Integrate USGS Water Data and NOAA flood warnings
-- Add river gauge data and flood stage levels
-- Implement flood zone mapping and affected area visualization
-- Include precipitation data and flash flood alerts
 
 #### 🔔 **Enhanced Features**
 - **Real-time Auto-refresh**: Implement WebSocket connections for live updates

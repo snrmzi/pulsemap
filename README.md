@@ -1,6 +1,6 @@
 # PulseMap - Live Natural Disaster Monitoring
 
-PulseMap is a real-time web application that provides live updates on natural disasters around the world including earthquakes, tsunamis, volcanoes, wildfires, floods, and solar flares.
+PulseMap is a real-time web application that provides live updates on natural disasters around the world including earthquakes, tsunamis, volcanoes, wildfires, and floods.
 
 ## Features
 
@@ -26,8 +26,7 @@ PulseMap is a real-time web application that provides live updates on natural di
 ## Planned Features
 
 Future development will include:
-- **☀️ Solar Flares**: Space weather and solar activity monitoring  
-- ** Real-time Notifications**: Push alerts for critical events
+- **Real-time Notifications**: Push alerts for critical events
 - **📊 Enhanced Analytics**: Historical trends and patterns
 - **🔍 Advanced Filtering**: More sophisticated search and filter options
 
@@ -49,7 +48,6 @@ Events are color-coded for easy identification:
 - **Volcanoes**: Orange markers
 - **Wildfires**: Brown markers
 - **Floods**: Blue markers
-- **Solar Flares**: Yellow markers
 
 ## Installation & Setup
 

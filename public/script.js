@@ -13,8 +13,7 @@ const EVENT_COLORS = {
     tsunami: '#0066cc',      // blue
     volcano: '#cc3300',      // red
     wildfire: '#8B4513',     // brown (base color)
-    flood: '#000080',        // navy blue
-    solar_flare: '#ffff00'   // yellow
+    flood: '#000080'         // navy blue
 };
 
 // Wildfire intensity color gradient (light brown to dark brown)
@@ -40,8 +39,7 @@ const EVENT_ICONS = {
     tsunami: '🌊',
     volcano: '🌋',
     wildfire: '🔥',
-    flood: '💧',
-    solar_flare: '☀️'
+    flood: '💧'
 };
 
 // Initialize the application based on current page
