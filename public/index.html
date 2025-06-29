@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseMap - Live Natural Disaster Monitoring</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>PulseMap</h1>
+            <div class="filter-container">
+                <label for="eventFilter">Filter Events:</label>
+                <select id="eventFilter">
+                    <option value="">All Events</option>
+                    <option value="earthquake">Earthquakes</option>
+                    <option value="tsunami">Tsunamis</option>
+                    <option value="volcano">Volcanoes</option>
+                    <option value="wildfire">Wildfires</option>
+                    <option value="flood">Floods</option>
+                    <option value="solar">Solar Flares</option>
+                </select>
+            </div>
+        </header>
+
+        <main>
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <h2>Recent Events</h2>
+                    <div class="stats-container" id="statsContainer">
+                        <div class="stat-item">
+                            <span class="stat-number" id="totalEvents">-</span>
+                            <span class="stat-label">Total Events</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="events-list" id="eventsList">
+                    <div class="loading">Loading events...</div>
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Event popup modal -->
+    <div id="eventModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div id="modalContent">
+                <!-- Event details go here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

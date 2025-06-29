@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PulseMap Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+
+        .header {
+            background-color: #2d2d2d;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #444;
+        }
+
+        .header h1 {
+            color: #ff6b35;
+            font-size: 1.5rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: #ff6b35;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #e55a2b;
+        }
+
+        .btn-secondary {
+            background-color: #555;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #666;
+        }
+
+        .btn-danger {
+            background-color: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .container {
+            padding: 2rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background-color: #2d2d2d;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ff6b35;
+            display: block;
+        }
+
+        .stat-label {
+            color: #ccc;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        .events-section {
+            background-color: #2d2d2d;
+            border-radius: 8px;
+            border: 1px solid #444;
+            overflow: hidden;
+        }
+
+        .section-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #444;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-header h2 {
+            color: #ff6b35;
+        }
+
+        .events-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .events-table th,
+        .events-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #444;
+        }
+
+        .events-table th {
+            background-color: #3d3d3d;
+            color: #ccc;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .events-table td {
+            color: #ffffff;
+        }
+
+        .events-table tr:hover {
+            background-color: #3d3d3d;
+        }
+
+        .event-type {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .event-type.earthquake {
+            background-color: #dc2626;
+        }
+
+        .event-type.tsunami {
+            background-color: #0891b2;
+        }
+
+        .event-type.volcano {
+            background-color: #ea580c;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+
+        .modal-content {
+            background-color: #2d2d2d;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .close {
+            color: #ccc;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #ffffff;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #ccc;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.5rem;
+            background-color: #3d3d3d;
+            border: 1px solid #555;
+            border-radius: 4px;
+            color: #ffffff;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #ff6b35;
+        }
+
+        .message {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 6px;
+        }
+
+        .message.success {
+            background-color: #059669;
+            color: white;
+        }
+
+        .message.error {
+            background-color: #dc2626;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>PulseMap Admin Dashboard</h1>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="window.open('/', '_blank')">View Site</button>
+            <button class="btn btn-primary" onclick="cleanupOldData()">Cleanup Old Data</button>
+            <button class="btn btn-danger" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="message"></div>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <span class="stat-number" id="totalEvents">-</span>
+                <div class="stat-label">Total Events</div>
+            </div>
+        </div>
+
+        <div class="events-section">
+            <div class="section-header">
+                <h2>All Events</h2>
+                <button class="btn btn-primary" onclick="loadEvents()">Refresh</button>
+            </div>
+            
+            <div id="eventsContainer">
+                <div class="loading">Loading events...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit event modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h3>Edit Event</h3>
+            <form id="editForm">
+                <input type="hidden" id="editEventId">
+                
+                <div class="form-group">
+                    <label for="editTitle">Title</label>
+                    <input type="text" id="editTitle" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editMagnitude">Magnitude</label>
+                    <input type="number" id="editMagnitude" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="editDepth">Depth (km)</label>
+                    <input type="number" id="editDepth" step="0.1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="editLatitude">Latitude</label>
+                    <input type="number" id="editLatitude" step="any" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editLongitude">Longitude</label>
+                    <input type="number" id="editLongitude" step="any" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="editLocation">Location</label>
+                    <input type="text" id="editLocation">
+                </div>
+                
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button type="submit" class="btn btn-primary">Update Event</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let allEvents = [];
+
+        // Load events on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadEvents();
+            loadStats();
+        });
+
+        async function loadEvents() {
+            try {
+                const response = await fetch('/admin/events');
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = '/admin';
+                        return;
+                    }
+                    throw new Error('Failed to load events');
+                }
+                
+                const events = await response.json();
+                allEvents = events;
+                displayEvents(events);
+                
+            } catch (error) {
+                console.error('Error loading events:', error);
+                showMessage('Failed to load events', 'error');
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+                
+                displayStats(stats);
+                
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        function displayStats(stats) {
+            const statsGrid = document.getElementById('statsGrid');
+            const totalEventsEl = document.getElementById('totalEvents');
+            
+            totalEventsEl.textContent = stats.total || 0;
+            
+            // Add event type stats
+            let additionalStats = '';
+            Object.keys(stats).forEach(key => {
+                if (key !== 'total' && stats[key] > 0) {
+                    additionalStats += `
+                        <div class="stat-card">
+                            <span class="stat-number">${stats[key]}</span>
+                            <div class="stat-label">${key.charAt(0).toUpperCase() + key.slice(1)}</div>
+                        </div>
+                    `;
+                }
+            });
+            
+            if (additionalStats) {
+                const existingTotal = statsGrid.innerHTML;
+                statsGrid.innerHTML = existingTotal + additionalStats;
+            }
+        }
+
+        function displayEvents(events) {
+            const container = document.getElementById('eventsContainer');
+            
+            if (events.length === 0) {
+                container.innerHTML = '<div class="loading">No events found</div>';
+                return;
+            }
+            
+            const tableHtml = `
+                <table class="events-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Title</th>
+                            <th>Location</th>
+                            <th>Magnitude</th>
+                            <th>Time</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${events.map(event => `
+                            <tr>
+                                <td><span class="event-type ${event.type}">${event.type}</span></td>
+                                <td>${event.title}</td>
+                                <td>${event.location || '-'}</td>
+                                <td>${event.magnitude || '-'}</td>
+                                <td>${new Date(event.time).toLocaleDateString()}</td>
+                                <td>
+                                    <div class="actions">
+                                        <button class="btn btn-sm btn-secondary" onclick="editEvent(${event.id})">Edit</button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteEvent(${event.id})">Delete</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            container.innerHTML = tableHtml;
+        }
+
+        function editEvent(id) {
+            const event = allEvents.find(e => e.id === id);
+            if (!event) return;
+            
+            document.getElementById('editEventId').value = event.id;
+            document.getElementById('editTitle').value = event.title;
+            document.getElementById('editMagnitude').value = event.magnitude || '';
+            document.getElementById('editDepth').value = event.depth || '';
+            document.getElementById('editLatitude').value = event.latitude;
+            document.getElementById('editLongitude').value = event.longitude;
+            document.getElementById('editLocation').value = event.location || '';
+            
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        document.getElementById('editForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('editEventId').value;
+            const eventData = {
+                title: document.getElementById('editTitle').value,
+                magnitude: parseFloat(document.getElementById('editMagnitude').value) || null,
+                depth: parseFloat(document.getElementById('editDepth').value) || null,
+                latitude: parseFloat(document.getElementById('editLatitude').value),
+                longitude: parseFloat(document.getElementById('editLongitude').value),
+                location: document.getElementById('editLocation').value
+            };
+            
+            try {
+                const response = await fetch(`/admin/events/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(eventData)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage('Event updated successfully', 'success');
+                    closeEditModal();
+                    loadEvents();
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to update event', 'error');
+            }
+        });
+
+        async function deleteEvent(id) {
+            if (!confirm('Are you sure you want to delete this event?')) return;
+            
+            try {
+                const response = await fetch(`/admin/events/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage('Event deleted successfully', 'success');
+                    loadEvents();
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to delete event', 'error');
+            }
+        }
+
+        async function cleanupOldData() {
+            if (!confirm('This will delete all events older than 7 days. Continue?')) return;
+            
+            try {
+                const response = await fetch('/admin/cleanup', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage(`Successfully cleaned up ${data.deletedCount} old events`, 'success');
+                    loadEvents();
+                    loadStats();
+                } else {
+                    showMessage(data.error, 'error');
+                }
+            } catch (error) {
+                showMessage('Failed to cleanup old data', 'error');
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/admin/logout', { method: 'POST' });
+                window.location.href = '/admin';
+            } catch (error) {
+                console.error('Logout error:', error);
+                window.location.href = '/admin';
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="message ${type}">${text}</div>`;
+            
+            setTimeout(() => {
+                messageDiv.innerHTML = '';
+            }, 5000);
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target === modal) {
+                closeEditModal();
+            }
+        }
+    </script>
+</body>
+</html>

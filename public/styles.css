@@ -1,0 +1,348 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #1a1a1a;
+    color: #ffffff;
+    overflow: hidden;
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+header {
+    background-color: #2d2d2d;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    z-index: 1000;
+}
+
+h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #ff6b35;
+}
+
+.filter-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-container label {
+    color: #ccc;
+}
+
+select {
+    background-color: #3d3d3d;
+    color: #ffffff;
+    border: 1px solid #555;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+select:focus {
+    outline: none;
+    border-color: #ff6b35;
+}
+
+main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.map-container {
+    flex: 1;
+    position: relative;
+}
+
+#map {
+    height: 100%;
+    width: 100%;
+}
+
+.sidebar {
+    width: 350px;
+    background-color: #2d2d2d;
+    border-left: 1px solid #444;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.sidebar-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #444;
+}
+
+.sidebar-header h2 {
+    margin-bottom: 1rem;
+    color: #ff6b35;
+}
+
+.stats-container {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #3d3d3d;
+    padding: 0.75rem;
+    border-radius: 6px;
+    min-width: 80px;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #ff6b35;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #ccc;
+    text-align: center;
+    margin-top: 0.25rem;
+}
+
+.events-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+}
+
+.event-item {
+    background-color: #3d3d3d;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-left: 3px solid transparent;
+}
+
+.event-item:hover {
+    background-color: #4d4d4d;
+}
+
+.event-item.earthquake {
+    border-left-color: #dc2626;
+}
+
+.event-item.tsunami {
+    border-left-color: #0891b2;
+}
+
+.event-item.volcano {
+    border-left-color: #ea580c;
+}
+
+.event-item.wildfire {
+    border-left-color: #dc2626;
+}
+
+.event-item.flood {
+    border-left-color: #2563eb;
+}
+
+.event-item.solar {
+    border-left-color: #facc15;
+}
+
+.event-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.event-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+}
+
+.event-icon.earthquake {
+    background-color: #dc2626;
+}
+
+.event-icon.tsunami {
+    background-color: #0891b2;
+}
+
+.event-icon.volcano {
+    background-color: #ea580c;
+}
+
+.event-icon.wildfire {
+    background-color: #dc2626;
+}
+
+.event-icon.flood {
+    background-color: #2563eb;
+}
+
+.event-icon.solar {
+    background-color: #facc15;
+}
+
+.event-type {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: #ccc;
+}
+
+.event-location {
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: #ffffff;
+}
+
+.event-details {
+    font-size: 0.8rem;
+    color: #ccc;
+}
+
+.event-time {
+    font-size: 0.75rem;
+    color: #999;
+    margin-top: 0.5rem;
+}
+
+.loading {
+    text-align: center;
+    color: #ccc;
+    padding: 2rem;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+}
+
+.modal-content {
+    background-color: #2d2d2d;
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.close {
+    color: #ccc;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #ffffff;
+}
+
+.modal h3 {
+    color: #ff6b35;
+    margin-bottom: 1rem;
+}
+
+.modal-detail {
+    margin-bottom: 0.75rem;
+}
+
+.modal-detail strong {
+    color: #ffffff;
+    display: inline-block;
+    min-width: 100px;
+}
+
+/* Custom Leaflet popup styles */
+.leaflet-popup-content-wrapper {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    border-radius: 6px;
+}
+
+.leaflet-popup-content {
+    margin: 12px 16px;
+}
+
+.leaflet-popup-tip {
+    background-color: #2d2d2d;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .sidebar {
+        position: absolute;
+        top: 0;
+        right: -350px;
+        height: 100%;
+        z-index: 1500;
+        transition: right 0.3s ease;
+    }
+    
+    .sidebar.open {
+        right: 0;
+    }
+    
+    header {
+        padding: 1rem;
+    }
+    
+    h1 {
+        font-size: 1.5rem;
+    }
+}
+
+/* Scrollbar styling */
+.events-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.events-list::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+.events-list::-webkit-scrollbar-thumb {
+    background: #555;
+    border-radius: 3px;
+}
+
+.events-list::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}
