@@ -29,7 +29,7 @@ PulseMap is a real-time natural disaster monitoring web app that gives live upda
 Created SQLite tables:
 - `events`: Stores natural disaster events (id, event_id, type, title, description, magnitude, depth, latitude, longitude, location, time, url, created_at)
 - `admin_users`: Stores admin credentials (id, username, password_hash, created_at)
-- Default admin user created (username: admin, password: admin123)
+- Default admin user created (username: admin, password: admin123 - change in production)
 
 #### ✅ Backend API Development
 - **GET /api/events**: Get all events with optional type filtering

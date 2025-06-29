@@ -141,7 +141,7 @@ Data is fetched manually on server startup and via admin dashboard refresh. The 
 
 4. **Configure secrets**:
    ```bash
-   fly secrets set SESSION_SECRET=your-secure-session-secret-here
+   fly secrets set SESSION_SECRET=your-random-session-secret-here
    ```
 
 ## Development

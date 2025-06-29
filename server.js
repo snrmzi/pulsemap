@@ -19,7 +19,7 @@ app.use(express.static('public'));
 
 // Session configuration
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'pulsemap-secret-key-change-in-production',
+  secret: process.env.SESSION_SECRET || 'change-this-secure-session-secret-in-production',
   resave: false,
   saveUninitialized: false,
   cookie: {

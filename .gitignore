@@ -51,6 +51,10 @@ jspm_packages/
 *.swp
 *.swo
 
+# Development and debug files
+pulsemap.db
+cookies.txt
+
 # OS
 .DS_Store
 Thumbs.db
