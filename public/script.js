@@ -100,8 +100,14 @@ async function loadEvents() {
 }
 
 function updateMapMarkers() {
-    // Clear existing markers
-    markers.forEach(marker => map.removeLayer(marker));
+    // Clear existing markers and their associated circles
+    markers.forEach(marker => {
+        map.removeLayer(marker);
+        // Remove tsunami circle if it exists
+        if (marker._tsunamiCircle) {
+            map.removeLayer(marker._tsunamiCircle);
+        }
+    });
     markers = [];
     
     // Filter events if needed
@@ -116,6 +122,11 @@ function updateMapMarkers() {
             const marker = createEventMarker(event);
             markers.push(marker);
             marker.addTo(map);
+            
+            // Add tsunami circle to map if it exists
+            if (marker._tsunamiCircle) {
+                marker._tsunamiCircle.addTo(map);
+            }
         }
     });
 }
@@ -134,14 +145,26 @@ function createEventMarker(event) {
     
     const marker = L.marker([event.latitude, event.longitude], { icon: customIcon });
     
+    // Add affected area circle for tsunamis
+    if (event.type === 'tsunami') {
+        // Use fixed 50km radius as requested, or calculate based on threat level
+        const radius = 50000; // 50km in meters
+        const circle = L.circle([event.latitude, event.longitude], {
+            color: color,
+            fillColor: color,
+            fillOpacity: 0.1,
+            radius: radius,
+            weight: 2,
+            opacity: 0.6
+        });
+        
+        // Store the circle reference with the marker for cleanup
+        marker._tsunamiCircle = circle;
+    }
+    
     // Add popup
     const popupContent = createPopupContent(event);
     marker.bindPopup(popupContent);
-    
-    // Add click handler for modal
-    marker.on('click', function() {
-        showEventModal(event);
-    });
     
     return marker;
 }
@@ -157,9 +180,16 @@ function createPopupContent(event) {
             <p><strong>Location:</strong> ${event.location || 'Unknown'}</p>
     `;
     
-    if (event.magnitude) {
+    if (event.type === 'tsunami' && event.magnitude) {
+        // For tsunamis, magnitude represents threat level
+        const threatLevels = { 1: 'Advisory', 2: 'Watch', 3: 'Warning' };
+        const threatLevel = threatLevels[event.magnitude] || 'Unknown';
+        content += `<p><strong>Threat Level:</strong> ${threatLevel}</p>`;
+        content += `<p><strong>Affected Radius:</strong> 50 km</p>`;
+    } else if (event.magnitude) {
         content += `<p><strong>Magnitude:</strong> ${event.magnitude}</p>`;
     }
+    
     if (event.depth) {
         content += `<p><strong>Depth:</strong> ${event.depth} km</p>`;
     }
@@ -190,14 +220,14 @@ function updateEventsList() {
         return new Date(timeB) - new Date(timeA);
     });
     
-    const html = eventsToShow.slice(0, 20).map(event => {
+    const html = eventsToShow.slice(0, 20).map((event, index) => {
         const timestamp = event.time || event.timestamp;
         const date = new Date(timestamp).toLocaleDateString();
         const time = new Date(timestamp).toLocaleTimeString();
         const icon = EVENT_ICONS[event.type] || '📍';
         
         return `
-            <div class="event-item" onclick="showEventModal(${JSON.stringify(event).replace(/"/g, '&quot;')})">
+            <div class="event-item" onclick="centerMapOnEvent(${event.latitude}, ${event.longitude})" style="cursor: pointer;">
                 <div class="event-icon">${icon}</div>
                 <div class="event-details">
                     <div class="event-title">${event.title || `${event.type.charAt(0).toUpperCase() + event.type.slice(1)}`}</div>
@@ -298,52 +328,6 @@ function updateStats() {
     }
     
     statsContainer.innerHTML = statsHTML;
-}
-
-function showEventModal(event) {
-    const modal = document.getElementById('eventModal');
-    const modalContent = document.getElementById('modalContent');
-    
-    if (!modal || !modalContent) return;
-    
-    const timestamp = event.time || event.timestamp;
-    const date = new Date(timestamp).toLocaleString();
-    const icon = EVENT_ICONS[event.type] || '📍';
-    
-    let content = `
-        <div class="event-modal-content">
-            <div class="event-modal-header">
-                <span class="event-modal-icon">${icon}</span>
-                <h2>${event.title || `${event.type.charAt(0).toUpperCase() + event.type.slice(1)}`}</h2>
-            </div>
-            <div class="event-modal-details">
-                <p><strong>Type:</strong> ${event.type}</p>
-                <p><strong>Date:</strong> ${date}</p>
-                <p><strong>Location:</strong> ${event.location || 'Unknown'}</p>
-                <p><strong>Coordinates:</strong> ${event.latitude}, ${event.longitude}</p>
-    `;
-    
-    if (event.magnitude) {
-        content += `<p><strong>Magnitude:</strong> ${event.magnitude}</p>`;
-    }
-    if (event.depth) {
-        content += `<p><strong>Depth:</strong> ${event.depth} km</p>`;
-    }
-    if (event.description) {
-        content += `<p><strong>Description:</strong> ${event.description}</p>`;
-    }
-    
-    content += '</div></div>';
-    
-    modalContent.innerHTML = content;
-    modal.style.display = 'block';
-}
-
-function closeModal() {
-    const modal = document.getElementById('eventModal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
 }
 
 function showError(message) {
@@ -851,3 +835,19 @@ document.addEventListener('keydown', function(event) {
         closeModal();
     }
 });
+
+function centerMapOnEvent(latitude, longitude) {
+    if (map && latitude && longitude) {
+        // Center and zoom the map on the selected event
+        map.setView([latitude, longitude], 8);
+        
+        // Find and open the popup for this event
+        markers.forEach(marker => {
+            const markerLatLng = marker.getLatLng();
+            if (Math.abs(markerLatLng.lat - latitude) < 0.001 && 
+                Math.abs(markerLatLng.lng - longitude) < 0.001) {
+                marker.openPopup();
+            }
+        });
+    }
+}

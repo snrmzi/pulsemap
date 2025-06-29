@@ -10,8 +10,25 @@ PulseMap is a real-time web application that provides live updates on natural di
 - **Detailed Information**: Click on map markers or sidebar events to view comprehensive details
 - **Admin Dashboard**: Secure admin panel for managing events and data cleanup
 - **Responsive Design**: Optimized for both desktop and mobile devices
-- **Intelligent Data Retention**: 7-day retention for earthquakes, 15-year retention for tsunamis and volcanoes
+- **Intelligent Data Retention**: 7-day retention for earthquakes (magnitude > 2.0), 15-year retention for tsunamis and volcanoes
 - **Clean Architecture**: Separated HTML, CSS, and JavaScript for maintainability
+- **Interactive Navigation**: Click sidebar events to center and zoom map to event location
+
+## Current Data Sources
+
+- **🌍 Earthquakes**: USGS Earthquake API (magnitude > 2.0, last 7 days)
+- **🌊 Tsunamis**: NOAA Tsunami Warning API (active alerts + 1 demo event)
+- **🌋 Volcanoes**: Smithsonian Global Volcanism Program (2010-present)
+
+## Planned Features
+
+Future development will include:
+- **🔥 Wildfires**: Integration with fire monitoring APIs
+- **☀️ Solar Flares**: Space weather and solar activity monitoring  
+- **💧 Floods**: Flood alert and monitoring systems
+- **🔔 Real-time Notifications**: Push alerts for critical events
+- **📊 Enhanced Analytics**: Historical trends and patterns
+- **🔍 Advanced Filtering**: More sophisticated search and filter options
 
 ## Technical Stack
 

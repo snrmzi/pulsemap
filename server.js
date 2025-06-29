@@ -80,7 +80,13 @@ app.get('/', (req, res) => {
 const fetchEarthquakeData = async () => {
   try {
     const response = await axios.get('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson');
-    const events = response.data.features;
+    const allEvents = response.data.features;
+    
+    // Filter earthquakes to only include magnitude > 2
+    const events = allEvents.filter(event => {
+      const magnitude = event.properties.mag;
+      return magnitude && magnitude > 2;
+    });
     
     for (const event of events) {
       const props = event.properties;
@@ -102,7 +108,7 @@ const fetchEarthquakeData = async () => {
           props.url
         ]);
     }
-    console.log(`Updated ${events.length} earthquake events`);
+    console.log(`Updated ${events.length} earthquake events (magnitude > 2.0) from ${allEvents.length} total events`);
   } catch (error) {
     console.error('Error fetching earthquake data:', error.message);
   }
