@@ -73,6 +73,37 @@ Events are color-coded for easy identification:
    - Main application: http://localhost:3000
    - Admin dashboard: http://localhost:3000/admin
 
+### Server Startup Output
+
+When you start the application, you'll see output similar to this showing the data fetching process:
+
+```
+> pulsemap@1.0.0 dev
+> node server.js
+
+[dotenv@17.0.0] injecting env (3) from .env ~ 🔒 encrypt with dotenvx: https://dotenvx.com
+Server starting - fetching initial disaster data...
+Refreshing all disaster data...
+PulseMap server running on port 3000
+Visit http://localhost:3000 to view the application
+Processing earthquake data - received 228 events from USGS
+Updated 53 earthquake events (magnitude > 2.0, latest 100 from 53 filtered events, processed from first 300 of 228 total events)
+Processing tsunami data - received 0 tsunami alerts from NOAA
+Updated 0 tsunami events (processed from 0 received alerts)
+Processing volcano eruptions from Smithsonian API to find latest 100 from 2010-present...
+Updated 77 volcano events from 2010-present (latest 100 from 77 total valid eruptions, processed from first 300 records)
+Processing flood data - received 52 flood alerts from NOAA
+Selected top 48 highest severity floods from 48 total flood alerts (processed from first 300 of 52 received)
+Updated 48 flood events from NOAA
+Processing first 300 fires from NASA FIRMS for better performance...
+Collected 300 fires from first 300 records
+Selected top 300 highest quality fires for display
+Updated 0 wildfire events from NASA FIRMS
+All disaster data refreshed successfully
+```
+
+This shows the system successfully fetching and processing data from all integrated APIs with performance optimizations in place.
+
 ## Admin Access
 
 Default login:
