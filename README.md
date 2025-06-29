@@ -35,12 +35,13 @@ Future development will include:
 ## Technical Stack
 
 - **Backend**: Node.js + Express.js
-- **Database**: SQLite with optimized data retention policies
+- **Database**: SQLite with persistent volume storage (Fly.io optimized)
 - **Frontend**: Vanilla HTML/CSS/JavaScript (fully separated and organized)
 - **Maps**: Leaflet.js with custom styling
 - **Authentication**: bcryptjs + express-session
 - **APIs**: USGS Earthquake API, NOAA Tsunami API, NOAA Weather Service API, Smithsonian Global Volcanism Program, NASA FIRMS API
-- **Deployment**: Configured for Fly.io with Docker support
+- **Deployment**: Fly.io with Docker, persistent volumes, and health monitoring
+- **Performance**: Optimized for free tier with 512MB memory allocation
 
 ## Color Coding
 
@@ -134,9 +135,9 @@ Data is fetched manually on server startup and via admin dashboard refresh. The 
    fly auth login
    ```
 
-3. **Create persistent volume for database**:
+3. **Create persistent volume for database** (required before first deployment):
    ```bash
-   fly volumes create pulsemap_data --size 1
+   fly volumes create pulsemap_data --region ams --size 1
    ```
 
 4. **Deploy the application**:
@@ -148,6 +149,15 @@ Data is fetched manually on server startup and via admin dashboard refresh. The 
    ```bash
    fly secrets set SESSION_SECRET=your-random-session-secret-here
    ```
+
+### Deployment Configuration
+
+The application is optimized for Fly.io free plan deployment with:
+- **Region**: Amsterdam (ams) for European users
+- **Memory**: 512MB (optimized for free plan's 1GB allowance)
+- **Persistent Storage**: 1GB volume for SQLite database
+- **Health Checks**: Automatic monitoring via `/api/stats` endpoint
+- **Auto-scaling**: Machines auto-start/stop to minimize costs
 
 ## Development
 
