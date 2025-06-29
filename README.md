@@ -118,19 +118,9 @@ SQLite database has these tables:
 - **events**: All the disaster events
 - **admin_users**: Admin login credentials
 
-## Contributing
-
-Feel free to fork this and make it better! Just:
-
-1. Fork it
-2. Create a feature branch
-3. Make your changes
-4. Test it out
-5. Send a pull request
-
 ## License
 
-ISC License - do whatever you want with it.
+GNU General Public License v3.0 - see the LICENSE file for details.
 
 ---
 
