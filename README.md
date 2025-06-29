@@ -56,6 +56,7 @@ Default login:
 
 Right now it's connected to:
 - **USGS Earthquake API**: Live earthquake data
+- **NOAA Tsunami API**: Active tsunami warnings, watches, and advisories
 
 I built it so I can easily add more APIs for other disasters later. It fetches new data every 10 minutes and saves everything to a local SQLite database.
 

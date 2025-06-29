@@ -142,6 +142,33 @@ function createEventMarker(event) {
         icon: customIcon
     });
     
+    // For tsunami events, add a transparent circle to show affected area
+    if (event.type === 'tsunami') {
+        // Calculate radius based on threat level (magnitude field for tsunamis)
+        const threatLevel = event.magnitude || 1;
+        let radius = 50000; // Default 50km
+        
+        if (threatLevel >= 3) radius = 200000; // Warning: 200km
+        else if (threatLevel >= 2) radius = 150000; // Watch: 150km
+        else radius = 100000; // Advisory: 100km
+        
+        const circle = L.circle([event.latitude, event.longitude], {
+            color: config.color,
+            fillColor: config.color,
+            fillOpacity: 0.1,
+            opacity: 0.5,
+            radius: radius,
+            weight: 2
+        });
+        
+        // Store circle reference to remove it later
+        marker._tsunamiCircle = circle;
+        circle.addTo(map);
+        
+        // Add circle to markers array so it gets cleaned up
+        eventMarkers.push(circle);
+    }
+    
     // Create popup content
     const popupContent = createPopupContent(event);
     marker.bindPopup(popupContent);
@@ -177,7 +204,13 @@ function createPopupContent(event) {
             <p><strong>Time:</strong> ${timeString}</p>
     `;
     
-    if (event.magnitude) {
+    if (event.type === 'tsunami' && event.magnitude) {
+        // For tsunamis, show threat level instead of magnitude
+        let threatLevel = 'Advisory';
+        if (event.magnitude >= 3) threatLevel = 'Warning';
+        else if (event.magnitude >= 2) threatLevel = 'Watch';
+        details += `<p><strong>Threat Level:</strong> ${threatLevel}</p>`;
+    } else if (event.magnitude) {
         details += `<p><strong>Magnitude:</strong> ${event.magnitude}</p>`;
     }
     
@@ -276,7 +309,19 @@ function showEventModal(event) {
         <div class="modal-detail"><strong>Time:</strong> ${timeString}</div>
     `;
     
-    if (event.magnitude) {
+    if (event.type === 'tsunami' && event.magnitude) {
+        // For tsunamis, show threat level instead of magnitude
+        let threatLevel = 'Advisory';
+        let threatColor = '#facc15';
+        if (event.magnitude >= 3) {
+            threatLevel = 'Warning';
+            threatColor = '#dc2626';
+        } else if (event.magnitude >= 2) {
+            threatLevel = 'Watch';
+            threatColor = '#ea580c';
+        }
+        detailsHtml += `<div class="modal-detail"><strong>Threat Level:</strong> <span style="color: ${threatColor}; font-weight: bold;">${threatLevel}</span></div>`;
+    } else if (event.magnitude) {
         detailsHtml += `<div class="modal-detail"><strong>Magnitude:</strong> ${event.magnitude}</div>`;
     }
     

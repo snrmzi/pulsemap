@@ -108,14 +108,73 @@ const fetchEarthquakeData = async () => {
   }
 };
 
+// Fetch tsunami data from NOAA
+const fetchTsunamiData = async () => {
+  try {
+    // Using NOAA's tsunami warning API - this gives us active warnings and watches
+    const response = await axios.get('https://api.weather.gov/alerts/active?event=Tsunami%20Warning,Tsunami%20Watch,Tsunami%20Advisory');
+    const features = response.data.features || [];
+    
+    for (const feature of features) {
+      const props = feature.properties;
+      const geometry = feature.geometry;
+      
+      // Some alerts might not have coordinates, skip those
+      if (!geometry || !geometry.coordinates) continue;
+      
+      // Get the first coordinate pair for the marker position
+      let coordinates;
+      if (geometry.type === 'Polygon') {
+        coordinates = geometry.coordinates[0][0]; // First point of first ring
+      } else if (geometry.type === 'Point') {
+        coordinates = geometry.coordinates;
+      } else if (geometry.type === 'MultiPolygon') {
+        coordinates = geometry.coordinates[0][0][0]; // First point of first ring of first polygon
+      } else {
+        continue; // Skip unsupported geometry types
+      }
+      
+      // Extract threat level from event type
+      let magnitude = 1; // Default threat level
+      if (props.event.includes('Warning')) magnitude = 3;
+      else if (props.event.includes('Watch')) magnitude = 2;
+      else if (props.event.includes('Advisory')) magnitude = 1;
+      
+      // Generate unique ID from the alert ID and start time
+      const eventId = `tsunami_${props.id}_${props.onset}`;
+      
+      db.run(`INSERT OR REPLACE INTO events 
+        (event_id, type, title, description, magnitude, latitude, longitude, location, time, url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          eventId,
+          'tsunami',
+          `${props.event}: ${props.headline}`,
+          props.description || props.instruction,
+          magnitude, // Use magnitude field for threat level
+          coordinates[1], // latitude
+          coordinates[0], // longitude
+          props.areaDesc,
+          new Date(props.onset || props.sent).getTime(),
+          `https://api.weather.gov/alerts/${props.id}`
+        ]);
+    }
+    console.log(`Updated ${features.length} tsunami events`);
+  } catch (error) {
+    console.error('Error fetching tsunami data:', error.message);
+  }
+};
+
 // Schedule data fetching every 10 minutes
 cron.schedule('*/10 * * * *', () => {
   console.log('Fetching latest disaster data...');
   fetchEarthquakeData();
+  fetchTsunamiData();
 });
 
 // Get initial data on startup
 fetchEarthquakeData();
+fetchTsunamiData();
 
 // Clean up old data every day at midnight (older than 7 days)
 cron.schedule('0 0 * * *', () => {

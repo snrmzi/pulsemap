@@ -136,10 +136,40 @@ Created SQLite tables:
 
 ---
 
+### 2025-06-29 - Tsunami Support Added
+
+**Time**: Feature enhancement
+**Developer**: San
+
+#### ✅ Tsunami Data Integration
+- **NOAA Tsunami API**: Integrated active tsunami warnings, watches, and advisories
+- **Threat Level System**: Uses magnitude field to store threat levels (1=Advisory, 2=Watch, 3=Warning)
+- **Geographic Coverage**: Shows affected regions with transparent circles around source points
+- **Real-time Updates**: Fetches data every 10 minutes alongside earthquake data
+
+#### ✅ Frontend Enhancements
+- **Custom Tsunami Markers**: Blue markers with transparent affected area circles
+- **Threat Level Display**: Color-coded threat levels in popups and modals
+- **Affected Area Visualization**: Radius varies by threat level (100-200km)
+- **Enhanced Modal Details**: Shows threat level instead of magnitude for tsunamis
+
+#### ✅ Data Processing
+- **API Integration**: NOAA Weather Service alerts API for active tsunami events
+- **Coordinate Handling**: Supports various geometry types (Point, Polygon, MultiPolygon)
+- **Unique Event IDs**: Prevents duplicate tsunami alerts using combined ID and onset time
+- **Metadata Storage**: Stores description, affected areas, and official alert URLs
+
+#### 🎯 Technical Implementation
+- **Server-side**: Added `fetchTsunamiData()` function with error handling
+- **Database**: Reused existing events table structure with magnitude as threat level
+- **Frontend**: Enhanced marker creation with transparent circles for affected areas
+- **Styling**: Color-coded threat levels (Yellow=Advisory, Orange=Watch, Red=Warning)
+
+---
+
 ### Next Development Phases (Planned)
 
 #### Phase 2: More APIs
-- Tsunami warning systems
 - Volcano monitoring APIs
 - Wildfire tracking services
 - Flood monitoring systems
