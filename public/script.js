@@ -7,7 +7,7 @@ let allEvents = [];
 const eventConfig = {
     earthquake: {
         color: '#dc2626',
-        icon: '🌋',
+        icon: '⚡',
         shape: 'circle'
     },
     tsunami: {
@@ -210,6 +210,13 @@ function createPopupContent(event) {
         if (event.magnitude >= 3) threatLevel = 'Warning';
         else if (event.magnitude >= 2) threatLevel = 'Watch';
         details += `<p><strong>Threat Level:</strong> ${threatLevel}</p>`;
+    } else if (event.type === 'volcano' && event.magnitude) {
+        // For volcanoes, show alert level instead of magnitude
+        let alertLevel = 'Normal';
+        if (event.magnitude >= 3) alertLevel = 'Warning';
+        else if (event.magnitude >= 2) alertLevel = 'Watch';
+        else if (event.magnitude >= 1) alertLevel = 'Advisory';
+        details += `<p><strong>Alert Level:</strong> ${alertLevel}</p>`;
     } else if (event.magnitude) {
         details += `<p><strong>Magnitude:</strong> ${event.magnitude}</p>`;
     }
@@ -321,6 +328,21 @@ function showEventModal(event) {
             threatColor = '#ea580c';
         }
         detailsHtml += `<div class="modal-detail"><strong>Threat Level:</strong> <span style="color: ${threatColor}; font-weight: bold;">${threatLevel}</span></div>`;
+    } else if (event.type === 'volcano' && event.magnitude) {
+        // For volcanoes, show alert level instead of magnitude
+        let alertLevel = 'Normal';
+        let alertColor = '#22c55e';
+        if (event.magnitude >= 3) {
+            alertLevel = 'Warning';
+            alertColor = '#dc2626';
+        } else if (event.magnitude >= 2) {
+            alertLevel = 'Watch';
+            alertColor = '#ea580c';
+        } else if (event.magnitude >= 1) {
+            alertLevel = 'Advisory';
+            alertColor = '#facc15';
+        }
+        detailsHtml += `<div class="modal-detail"><strong>Alert Level:</strong> <span style="color: ${alertColor}; font-weight: bold;">${alertLevel}</span></div>`;
     } else if (event.magnitude) {
         detailsHtml += `<div class="modal-detail"><strong>Magnitude:</strong> ${event.magnitude}</div>`;
     }

@@ -165,25 +165,107 @@ const fetchTsunamiData = async () => {
   }
 };
 
+// Fetch volcano data from Smithsonian Global Volcanism Program
+const fetchVolcanoData = async () => {
+  try {
+    // Fetch volcano eruptions from 2010 onwards using Smithsonian API
+    const response = await axios.get('https://webservices.volcano.si.edu/geoserver/GVP-VOTW/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=GVP-VOTW:Smithsonian_VOTW_Holocene_Eruptions&maxFeatures=1000&outputFormat=application/json');
+    
+    if (!response.data || !response.data.features) {
+      console.log('No volcano data received from Smithsonian API');
+      return;
+    }
+
+    const eruptions = response.data.features;
+    let processedCount = 0;
+    
+    // Process eruptions from 2010 onwards
+    for (const eruption of eruptions) {
+      const props = eruption.properties;
+      const coords = eruption.geometry.coordinates;
+      
+      // Skip if no start year or coordinates
+      if (!props.StartDateYear || !coords || props.StartDateYear < 2010) continue;
+      
+      // Calculate timestamp (use start of year if no specific date)
+      const year = props.StartDateYear;
+      const month = props.StartDateMonth || 1;
+      const day = props.StartDateDay || 1;
+      const timestamp = new Date(year, month - 1, day).getTime();
+      
+      // Generate unique event ID
+      const eventId = `volcano_${props.Volcano_Number}_${props.Eruption_Number}`;
+      
+      // Determine alert level based on explosivity index
+      let alertLevel = 1; // Default to Advisory
+      if (props.ExplosivityIndexMax >= 4) alertLevel = 3; // Warning
+      else if (props.ExplosivityIndexMax >= 2) alertLevel = 2; // Watch
+      
+      // Create title and description
+      const title = `${props.Volcano_Name} - Eruption Alert`;
+      const description = props.ActivityArea ? 
+        `Volcanic activity at ${props.ActivityArea}` : 
+        `${props.Activity_Type} volcanic activity`;
+      
+      db.run(`INSERT OR REPLACE INTO events 
+        (event_id, type, title, description, magnitude, latitude, longitude, location, time, url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          eventId,
+          'volcano',
+          title,
+          description,
+          alertLevel, // Use magnitude field for alert level
+          coords[1], // latitude
+          coords[0], // longitude
+          props.Volcano_Name,
+          timestamp,
+          `https://volcano.si.edu/volcano.cfm?vn=${props.Volcano_Number}`
+        ]);
+      
+      processedCount++;
+    }
+    
+    console.log(`Updated ${processedCount} volcano events from 2010-present`);
+    
+  } catch (error) {
+    console.error('Error fetching volcano data:', error.message);
+  }
+};
+
 // Schedule data fetching every 10 minutes
 cron.schedule('*/10 * * * *', () => {
   console.log('Fetching latest disaster data...');
   fetchEarthquakeData();
   fetchTsunamiData();
+  fetchVolcanoData();
 });
 
 // Get initial data on startup
 fetchEarthquakeData();
 fetchTsunamiData();
+fetchVolcanoData();
 
-// Clean up old data every day at midnight (older than 7 days)
+// Clean up old data every day at midnight with different retention policies
 cron.schedule('0 0 * * *', () => {
   const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
-  db.run('DELETE FROM events WHERE time < ?', [sevenDaysAgo], function(err) {
+  const fifteenYearsAgo = Date.now() - (15 * 365 * 24 * 60 * 60 * 1000);
+  
+  // Clean up earthquakes older than 7 days
+  db.run('DELETE FROM events WHERE type = "earthquake" AND time < ?', [sevenDaysAgo], function(err) {
     if (err) {
-      console.error('Error cleaning old data:', err);
+      console.error('Error cleaning old earthquake data:', err);
     } else {
-      console.log(`Cleaned up ${this.changes} old events`);
+      console.log(`Cleaned up ${this.changes} old earthquake events`);
+    }
+  });
+  
+  // Clean up tsunamis and volcanoes older than 15 years
+  db.run('DELETE FROM events WHERE type IN ("tsunami", "volcano") AND time < ?', [fifteenYearsAgo], function(err) {
+    if (err) {
+      console.error('Error cleaning old tsunami/volcano data:', err);
+    } else {
+      console.log(`Cleaned up ${this.changes} old tsunami/volcano events`);
     }
   });
 });

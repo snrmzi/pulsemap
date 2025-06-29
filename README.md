@@ -10,7 +10,7 @@ PulseMap is a real-time web app I built that gives live updates on natural disas
 - **Detailed Info**: Click on map markers or sidebar events to see more details
 - **Admin Dashboard**: Secure admin panel for managing events and cleaning up data
 - **Responsive Design**: Works great on desktop and mobile
-- **7-day Data Retention**: Automatically cleans up old data (can do it manually too)
+- **7-day Data Retention**: Automatically cleans up old earthquake data (tsunamis and volcanoes kept for 15 years)
 
 ## How I built it
 
@@ -19,7 +19,7 @@ PulseMap is a real-time web app I built that gives live updates on natural disas
 - **Frontend**: Vanilla HTML/CSS/JavaScript
 - **Maps**: Leaflet.js
 - **Auth**: bcryptjs + express-session
-- **APIs**: USGS Earthquake API + NOAA Tsunami API (planning to add more)
+- **APIs**: USGS Earthquake API + NOAA Tsunami API + Smithsonian Volcano API
 - **Deployment**: Set up for Fly.io
 
 ## Getting it running
@@ -57,6 +57,7 @@ Default login:
 Right now it's connected to:
 - **USGS Earthquake API**: Live earthquake data
 - **NOAA Tsunami API**: Active tsunami warnings, watches, and advisories
+- **Smithsonian Global Volcanism Program**: Volcanic eruptions from 2010-present
 
 I built it so I can easily add more APIs for other disasters later. It fetches new data every 10 minutes and saves everything to a local SQLite database.
 
