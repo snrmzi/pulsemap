@@ -399,11 +399,11 @@ Created SQLite tables:
 **Developer**: San
 
 #### ✅ Event Count Optimization
-- **Earthquake Limits**: Limited to latest 50 earthquakes (magnitude > 2.0) for optimal performance
-- **Volcano Limits**: Limited to latest 50 volcano eruptions from 2010-present for faster loading
+- **All Event Types**: Implemented consistent 100-event limit for earthquakes, volcanoes, tsunamis, and floods
+- **Wildfire Exception**: Wildfires display 300 events due to their distributed nature and importance for fire monitoring
 - **Smart Data Management**: Clear and replace strategy ensures fresh, relevant data
-- **API Performance**: Modified `/api/events` endpoint to handle count limits efficiently
-- **Database Efficiency**: Reduced storage overhead and query response times
+- **API Performance**: Modified `/api/events` endpoint to handle variable limits efficiently (100 or 300 based on event type)
+- **Database Efficiency**: Optimized storage and query response times while maintaining comprehensive wildfire coverage
 
 #### ✅ Technical Implementation
 - **Server-side Filtering**: Sort and limit events during data fetch rather than in database queries
@@ -422,10 +422,10 @@ Created SQLite tables:
 ---
 
 **Status**: ✅ Performance optimized with smart event limits
-**Data Management**: Count-based limits for earthquakes (50) and volcanoes (50)
+**Data Management**: 100-event limit for most disaster types, 300 for wildfires
 **Performance**: Improved loading times and map responsiveness
-**User Experience**: Faster, more responsive interface with relevant recent data
-**Technical Debt**: Reduced database size and improved query performance
+**User Experience**: Faster, more responsive interface with comprehensive wildfire coverage
+**Technical Debt**: Optimized database size while maintaining critical fire monitoring data
 
 ---
 
