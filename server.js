@@ -58,7 +58,7 @@ db.serialize(() => {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
-  // Create default admin user (password: admin123)
+  // Create default admin user (password: change immediately in production)
   const defaultPassword = bcrypt.hashSync('admin123', 10);
   db.run(`INSERT OR IGNORE INTO admin_users (username, password_hash) VALUES (?, ?)`, 
     ['admin', defaultPassword]);

@@ -108,7 +108,7 @@ This shows the system successfully fetching and processing data from all integra
 
 Default login:
 - **Username**: admin
-- **Password**: admin123
+- **Password**: [change immediately after setup]
 
 **Note**: Change the default password before deploying to production!
 
