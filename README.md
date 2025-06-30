@@ -2,6 +2,9 @@
 
 PulseMap is a real-time web application that provides live updates on natural disasters around the world including earthquakes, tsunamis, volcanoes, wildfires, and floods.
 
+![PulseMap Interface](assets/pulsemap_screenshot.png)
+*Live disaster monitoring interface showing global events with color-coded markers and real-time statistics*
+
 ## Features
 
 - **Interactive World Map**: Dark-themed world map with color-coded markers for different disaster types
@@ -107,6 +110,9 @@ All disaster data refreshed successfully
 This shows the system successfully fetching and processing data from all integrated APIs with performance optimizations in place.
 
 ## Admin Access
+
+![Admin Dashboard](assets/dashboard_screenshot.png)
+*Admin dashboard interface for managing events, user accounts, and system maintenance*
 
 Default login:
 - **Username**: admin
