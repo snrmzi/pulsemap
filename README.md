@@ -5,6 +5,7 @@ PulseMap is a real-time web application that provides live updates on natural di
 ## Features
 
 - **Interactive World Map**: Dark-themed world map with color-coded markers for different disaster types
+- **Affected Area Visualization**: Transparent circles showing impact radius for significant events
 - **Manual Data Refresh**: Admin-controlled data updates on server startup and via refresh button
 - **Advanced Filtering**: Filter events by type and time range (1 hour to 30 days)
 - **Dynamic Statistics**: Event counts update automatically based on selected filters
@@ -18,11 +19,11 @@ PulseMap is a real-time web application that provides live updates on natural di
 
 ## Current Data Sources
 
-- **🌍 Earthquakes**: USGS Earthquake API (magnitude > 2.0, latest 100 events)
-- **🌊 Tsunamis**: NOAA Tsunami Warning API (active alerts + 1 demo event)
-- **🌋 Volcanoes**: Smithsonian Global Volcanism Program (2010-present, latest 100 events)
-- **🔥 Wildfires**: NASA FIRMS API (latest 300 highest quality fires by confidence and brightness)
-- **💧 Floods**: NOAA Weather Service API (latest 100 highest severity flood alerts)
+- **🌍 Earthquakes**: USGS Earthquake API (magnitude > 2.0, latest 100 events with USGS attenuation-based affected radius for M2.5+)
+- **🌊 Tsunamis**: NOAA Tsunami Warning API (active alerts + 1 demo event with threat-level based affected areas)
+- **🌋 Volcanoes**: Smithsonian Global Volcanism Program (2010-present, latest 100 events with explosivity-based affected radius)
+- **🔥 Wildfires**: NASA FIRMS API (latest 300 highest quality fires by confidence and brightness with intensity-based affected radius)
+- **💧 Floods**: NOAA Weather Service API (latest 100 highest severity flood alerts with severity-based affected radius)
 
 ## Planned Features
 
@@ -227,8 +228,15 @@ To add support for new disaster types:
 
 SQLite database contains:
 
-- **events**: Disaster event data with location, magnitude, timestamps
+- **events**: Disaster event data with location, magnitude, timestamps, and calculated affected radius
 - **admin_users**: Admin authentication credentials (bcrypt hashed)
+
+The `affected_radius` field stores calculated impact zones:
+- **Earthquakes**: USGS attenuation formula (magnitude 2.5+, 10-500km radius)
+- **Tsunamis**: Threat level based (100-200km radius)
+- **Volcanoes**: Explosivity index based (30-100km radius)
+- **Wildfires**: Intensity based (5-50km radius)
+- **Floods**: Severity level based (25-100km radius)
 
 ## License
 

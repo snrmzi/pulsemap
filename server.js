@@ -48,8 +48,14 @@ db.serialize(() => {
     location TEXT,
     time INTEGER NOT NULL,
     url TEXT,
+    affected_radius REAL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
+  // Add affected_radius column if it doesn't exist (for existing databases)
+  db.run(`ALTER TABLE events ADD COLUMN affected_radius REAL`, (err) => {
+    // Ignore error if column already exists
+  });
 
   // Admin users table
   db.run(`CREATE TABLE IF NOT EXISTS admin_users (
@@ -76,6 +82,60 @@ app.use('/admin', adminRoutes);
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+// USGS Attenuation Formula for calculating earthquake affected radius
+function calculateEarthquakeRadius(magnitude, depth) {
+  // Only calculate for magnitude 2.5+ earthquakes
+  if (!magnitude || magnitude < 2.5) {
+    return null;
+  }
+  
+  // Ensure depth is at least 1km to avoid division issues
+  const adjustedDepth = Math.max(depth || 10, 1);
+  
+  // USGS attenuation relationship
+  // Distance where Peak Ground Acceleration (PGA) drops to felt threshold
+  // Formula: log10(R) = 0.5 * M - 0.4 * log10(D) - 1.5
+  // Where R = radius in km, M = magnitude, D = depth in km
+  const logDistance = 0.5 * magnitude - 0.4 * Math.log10(adjustedDepth) - 1.5;
+  const radiusKm = Math.pow(10, logDistance);
+  
+  // Apply bounds: minimum 10km, maximum 500km
+  const boundedRadius = Math.max(10, Math.min(radiusKm * 1.8, 500)); // Use felt radius (1.8x multiplier)
+  
+  return Math.round(boundedRadius);
+}
+
+// Calculate affected radius for other disaster types
+function calculateDisasterRadius(type, magnitude, intensity) {
+  switch (type) {
+    case 'tsunami':
+      // Tsunami affected radius based on threat level (magnitude 1-3)
+      if (magnitude >= 3) return 200; // Warning
+      if (magnitude >= 2) return 150; // Watch  
+      return 100; // Advisory
+      
+    case 'volcano':
+      // Volcano affected radius based on explosivity index (magnitude/alert level)
+      if (magnitude >= 3) return 100; // Warning (high explosivity)
+      if (magnitude >= 2) return 60;  // Watch (moderate explosivity)
+      return 30; // Advisory (low explosivity)
+      
+    case 'wildfire':
+      // Wildfire affected radius based on intensity (magnitude 0-10)
+      const fireRadius = Math.max(5, Math.min(intensity * 5, 50)); // 5-50km based on intensity
+      return Math.round(fireRadius);
+      
+    case 'flood':
+      // Flood affected radius based on severity (magnitude 1-3+)
+      if (magnitude >= 3) return 75;  // Warning
+      if (magnitude >= 2) return 50;  // Watch
+      return 25; // Advisory
+      
+    default:
+      return null;
+  }
+}
 
 // Functions to fetch data from external APIs
 const fetchEarthquakeData = async () => {
@@ -107,21 +167,27 @@ const fetchEarthquakeData = async () => {
       for (const event of limitedEvents) {
         const props = event.properties;
         const coords = event.geometry.coordinates;
+        const magnitude = props.mag;
+        const depth = coords[2];
+        
+        // Calculate affected radius using USGS attenuation formula
+        const affectedRadius = calculateEarthquakeRadius(magnitude, depth);
         
         db.run(`INSERT OR REPLACE INTO events 
-          (event_id, type, title, magnitude, depth, latitude, longitude, location, time, url)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (event_id, type, title, magnitude, depth, latitude, longitude, location, time, url, affected_radius)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             event.id,
             'earthquake',
             props.title,
-            props.mag,
-            coords[2], // depth
+            magnitude,
+            depth, // depth
             coords[1], // latitude
             coords[0], // longitude
             props.place,
             props.time,
-            props.url
+            props.url,
+            affectedRadius
           ]);
       }
     });
@@ -169,12 +235,15 @@ const fetchTsunamiData = async () => {
       else if (props.event.includes('Watch')) magnitude = 2;
       else if (props.event.includes('Advisory')) magnitude = 1;
       
+      // Calculate affected radius for tsunami
+      const affectedRadius = calculateDisasterRadius('tsunami', magnitude);
+      
       // Generate unique ID from the alert ID and start time
       const eventId = `tsunami_${props.id}_${props.onset}`;
       
       db.run(`INSERT OR REPLACE INTO events 
-        (event_id, type, title, description, magnitude, latitude, longitude, location, time, url)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (event_id, type, title, description, magnitude, latitude, longitude, location, time, url, affected_radius)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           eventId,
           'tsunami',
@@ -185,7 +254,8 @@ const fetchTsunamiData = async () => {
           coordinates[0], // longitude
           props.areaDesc,
           new Date(props.onset || props.sent).getTime(),
-          `https://api.weather.gov/alerts/${props.id}`
+          `https://api.weather.gov/alerts/${props.id}`,
+          affectedRadius
         ]);
     }
     console.log(`Updated ${featuresToProcess.length} tsunami events (processed from ${features.length} received alerts)`);
@@ -233,6 +303,9 @@ const fetchVolcanoData = async () => {
       if (props.ExplosivityIndexMax >= 4) alertLevel = 3; // Warning
       else if (props.ExplosivityIndexMax >= 2) alertLevel = 2; // Watch
       
+      // Calculate affected radius for volcano
+      const affectedRadius = calculateDisasterRadius('volcano', alertLevel);
+      
       // Create title and description
       const title = `${props.Volcano_Name} - Eruption Alert`;
       const description = props.ActivityArea ? 
@@ -248,7 +321,8 @@ const fetchVolcanoData = async () => {
         longitude: coords[0],
         location: props.Volcano_Name,
         timestamp,
-        url: `https://volcano.si.edu/volcano.cfm?vn=${props.Volcano_Number}`
+        url: `https://volcano.si.edu/volcano.cfm?vn=${props.Volcano_Number}`,
+        affectedRadius
       });
     }
     
@@ -266,8 +340,8 @@ const fetchVolcanoData = async () => {
       
       for (const eruption of limitedEruptions) {
         db.run(`INSERT OR REPLACE INTO events 
-          (event_id, type, title, description, magnitude, latitude, longitude, location, time, url)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (event_id, type, title, description, magnitude, latitude, longitude, location, time, url, affected_radius)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             eruption.eventId,
             'volcano',
@@ -278,7 +352,8 @@ const fetchVolcanoData = async () => {
             eruption.longitude,
             eruption.location,
             eruption.timestamp,
-            eruption.url
+            eruption.url,
+            eruption.affectedRadius
           ]);
       }
     });
@@ -389,6 +464,9 @@ const fetchWildfireData = async () => {
         const normalizedConfidence = Math.max(fire.confidence / 100, 0.1); // Minimum 10% for calculation
         const intensity = Math.round((normalizedBrightness * 0.7 + normalizedConfidence * 0.3) * 10) / 10;
         
+        // Calculate affected radius for wildfire
+        const affectedRadius = calculateDisasterRadius('wildfire', intensity, intensity);
+        
         // Create timestamp from acquisition date and time
         const dateTime = `${fire.acq_date} ${fire.acq_time}`;
         const timestamp = new Date(dateTime.replace(/(\d{4})-(\d{2})-(\d{2}) (\d{2})(\d{2})/, '$1-$2-$3T$4:$5:00Z')).getTime();
@@ -398,8 +476,8 @@ const fetchWildfireData = async () => {
         const description = `Fire detected by satellite with ${fire.confidence}% confidence. Brightness: ${fire.brightness}K`;
         
         db.run(`INSERT OR REPLACE INTO events 
-          (event_id, type, title, description, magnitude, latitude, longitude, location, time, url)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (event_id, type, title, description, magnitude, latitude, longitude, location, time, url, affected_radius)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             eventId,
             'wildfire',
@@ -410,7 +488,8 @@ const fetchWildfireData = async () => {
             fire.longitude,
             `${fire.latitude.toFixed(3)}, ${fire.longitude.toFixed(3)}`,
             timestamp,
-            'https://firms.modaps.eosdis.nasa.gov/'
+            'https://firms.modaps.eosdis.nasa.gov/',
+            affectedRadius
           ]);
         
         processedCount++;
@@ -506,6 +585,9 @@ const fetchFloodData = async () => {
         }
       }
       
+      // Calculate affected radius for flood (use existing calculation from earlier)
+      const affectedRadius = calculateDisasterRadius('flood', severity);
+      
       validFloods.push({
         eventId,
         title: `${props.event}: ${props.headline}`,
@@ -517,7 +599,7 @@ const fetchFloodData = async () => {
         location: props.areaDesc,
         timestamp,
         url: `https://api.weather.gov/alerts/${props.id}`,
-        affectedAreaRadius
+        affectedRadius
       });
     }
     
@@ -546,8 +628,8 @@ const fetchFloodData = async () => {
       
       for (const flood of limitedFloods) {
         db.run(`INSERT OR REPLACE INTO events 
-          (event_id, type, title, description, magnitude, latitude, longitude, location, time, url)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          (event_id, type, title, description, magnitude, latitude, longitude, location, time, url, affected_radius)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             flood.eventId,
             'flood',
@@ -558,7 +640,8 @@ const fetchFloodData = async () => {
             flood.longitude,
             flood.location,
             flood.timestamp,
-            flood.url
+            flood.url,
+            flood.affectedRadius
           ]);
         
         processedCount++;

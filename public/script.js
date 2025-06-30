@@ -162,6 +162,10 @@ function updateMapMarkers() {
     // Clear existing markers and their associated circles
     markers.forEach(marker => {
         map.removeLayer(marker);
+        // Remove earthquake circle if it exists
+        if (marker._earthquakeCircle) {
+            map.removeLayer(marker._earthquakeCircle);
+        }
         // Remove tsunami circle if it exists
         if (marker._tsunamiCircle) {
             map.removeLayer(marker._tsunamiCircle);
@@ -186,6 +190,11 @@ function updateMapMarkers() {
             const marker = createEventMarker(event);
             markers.push(marker);
             marker.addTo(map);
+            
+            // Add earthquake circle to map if it exists
+            if (marker._earthquakeCircle) {
+                marker._earthquakeCircle.addTo(map);
+            }
             
             // Add tsunami circle to map if it exists
             if (marker._tsunamiCircle) {
@@ -226,10 +235,28 @@ function createEventMarker(event) {
     
     const marker = L.marker([event.latitude, event.longitude], { icon: customIcon });
     
+    // Add affected area circle for earthquakes (magnitude 2.5+)
+    if (event.type === 'earthquake' && event.magnitude >= 2.5 && event.affected_radius) {
+        // Use the calculated affected radius from database (converted to meters)
+        const radius = event.affected_radius * 1000; // Convert km to meters
+        
+        const circle = L.circle([event.latitude, event.longitude], {
+            color: color,
+            fillColor: color,
+            fillOpacity: 0.1,
+            radius: radius,
+            weight: 2,
+            opacity: 0.3
+        });
+        
+        // Store the circle reference with the marker for cleanup
+        marker._earthquakeCircle = circle;
+    }
+
     // Add affected area circle for tsunamis
     if (event.type === 'tsunami') {
-        // Use fixed 50km radius as requested
-        const radius = 50000; // 50km in meters
+        // Use calculated affected radius from database or default 50km
+        const radius = (event.affected_radius || 50) * 1000; // Convert km to meters
         const circle = L.circle([event.latitude, event.longitude], {
             color: color,
             fillColor: color,
@@ -242,12 +269,18 @@ function createEventMarker(event) {
         // Store the circle reference with the marker for cleanup
         marker._tsunamiCircle = circle;
     }
-    
+
     // Add affected area circle for wildfires
     if (event.type === 'wildfire') {
-        // Calculate radius based on intensity (1-5km range)
-        const intensity = event.magnitude || 1;
-        const radius = Math.max(1000, Math.min(5000, intensity * 500)); // 1-5km based on intensity
+        // Use calculated affected radius from database or calculate from intensity
+        let radius;
+        if (event.affected_radius) {
+            radius = event.affected_radius * 1000; // Convert km to meters
+        } else {
+            // Fallback calculation if no radius in database
+            const intensity = event.magnitude || 1;
+            radius = Math.max(1000, Math.min(5000, intensity * 500)); // 1-5km based on intensity
+        }
         
         const circle = L.circle([event.latitude, event.longitude], {
             color: color,
@@ -264,9 +297,15 @@ function createEventMarker(event) {
 
     // Add affected area circle for floods
     if (event.type === 'flood') {
-        // Calculate radius based on severity (15-100km range)
-        const severity = event.magnitude || 1;
-        const radius = Math.max(15000, Math.min(100000, severity * 25000)); // 15-100km based on severity
+        // Use calculated affected radius from database or calculate from severity
+        let radius;
+        if (event.affected_radius) {
+            radius = event.affected_radius * 1000; // Convert km to meters
+        } else {
+            // Fallback calculation if no radius in database
+            const severity = event.magnitude || 1;
+            radius = Math.max(15000, Math.min(100000, severity * 25000)); // 15-100km based on severity
+        }
         
         const circle = L.circle([event.latitude, event.longitude], {
             color: color,

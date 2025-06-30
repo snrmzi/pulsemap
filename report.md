@@ -577,6 +577,47 @@ Created SQLite tables:
 
 ## 🚀 Next Development Phase - Additional Disaster Types & Features
 
+---
+
+### 2025-06-30 - Earthquake Affected Radius Implementation
+
+**Time**: Advanced feature development
+**Developer**: San
+
+#### ✅ USGS Attenuation Formula Implementation
+- **Scientific Accuracy**: Implemented proper USGS attenuation relationship for earthquake affected radius calculation
+- **Magnitude Threshold**: Only earthquakes with magnitude 2.5+ display affected radius circles
+- **Formula**: `log10(R) = 0.5 * M - 0.4 * log10(D) - 1.5` where R=radius, M=magnitude, D=depth
+- **Bounded Results**: Applied 10-500km radius limits for realistic impact zones
+- **Database Integration**: Added `affected_radius` field to events table with automatic migration
+
+#### ✅ Comprehensive Affected Radius System
+- **All Disaster Types**: Implemented affected radius calculation for earthquakes, tsunamis, volcanoes, wildfires, and floods
+- **Type-Specific Logic**: Each disaster type uses appropriate calculation methodology:
+  - **Earthquakes**: USGS attenuation formula (10-500km)
+  - **Tsunamis**: Threat level based (100-200km)
+  - **Volcanoes**: Explosivity index based (30-100km)
+  - **Wildfires**: Intensity based (5-50km)
+  - **Floods**: Severity level based (25-100km)
+- **Visual Consistency**: Transparent circles match event marker colors with appropriate opacity
+
+#### ✅ Frontend Visualization Enhancement
+- **Circle Overlays**: Transparent circles showing affected areas for all significant events
+- **Color Coordination**: Affected area circles match their respective event marker colors
+- **Performance Optimization**: Circles are properly managed and cleaned up with marker updates
+- **Database Driven**: All radius calculations stored in database and retrieved for consistent display
+
+#### ✅ Database Schema Enhancement
+- **Backward Compatibility**: Added `affected_radius` column with automatic migration for existing databases
+- **Real-time Calculation**: Radius calculated during data fetch and stored for performance
+- **Consistent Storage**: All disaster types use the same radius field with type-specific calculations
+
+#### 🎯 Technical Implementation Details
+- **Server-side Calculation**: All affected radius calculations performed during data processing
+- **Efficient Storage**: Single `affected_radius` field handles all disaster types
+- **Frontend Optimization**: Circles managed through marker references for proper cleanup
+- **Visual Standards**: Consistent opacity and styling across all disaster types
+
 ### **Planned Implementations:**
 
 #### 🔔 **Enhanced Features**
