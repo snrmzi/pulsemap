@@ -188,7 +188,7 @@ pulsemap/
 └── README.md
 ```
 
-### Recent Refactoring (December 2025)
+### Recent Refactoring (July 2025)
 
 The codebase underwent a comprehensive refactoring to improve maintainability and user experience:
 
